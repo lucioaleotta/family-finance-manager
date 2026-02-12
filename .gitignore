@@ -1,0 +1,36 @@
+# File di build Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# File di log
+*.log
+
+# File di configurazione IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+*.sw?
+*.sublime-*
+.vscode/
+
+# File di sistema
+.DS_Store
+Thumbs.db
+
+# File compilati Java
+*.class
+
+# File temporanei
+*.tmp
+*.bak
+*.swp
+
+# File di ambiente
+.env
+
+# File JAR
+*.jar
+
+# Cartella Maven locale
+.m2/repository/
