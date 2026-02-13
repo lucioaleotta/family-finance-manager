@@ -81,7 +81,7 @@ echo
 echo "[3] Create transaction"
 TRANSACTION_CREATE_RESPONSE=$(curl -sS -X POST "$BASE_URL/api/transactions" \
   -H "Content-Type: application/json" \
-  -d "{\"accountId\":\"$ACCOUNT_ID\",\"amount\":42.50,\"date\":\"${MONTH}-10\",\"type\":\"EXPENSE\",\"category\":\"GROCERIES\",\"description\":\"Spesa settimanale\"}" \
+  -d "{\"accountId\":\"$ACCOUNT_ID\",\"amount\":{\"amount\":42.50,\"currency\":\"EUR\"},\"date\":\"${MONTH}-10\",\"type\":\"EXPENSE\",\"category\":\"GROCERIES\",\"description\":\"Spesa settimanale\"}" \
   -w "\n%{http_code}")
 
 split_body_status "$TRANSACTION_CREATE_RESPONSE"
@@ -103,7 +103,7 @@ echo
 echo "[5] Update transaction"
 UPDATE_STATUS=$(curl -sS -X PUT "$BASE_URL/api/transactions/$TRANSACTION_ID" \
   -H "Content-Type: application/json" \
-  -d "{\"accountId\":\"$ACCOUNT_ID\",\"amount\":45.00,\"date\":\"${MONTH}-10\",\"type\":\"EXPENSE\",\"category\":\"GROCERIES\",\"description\":\"Spesa aggiornata\"}" \
+  -d "{\"accountId\":\"$ACCOUNT_ID\",\"amount\":{\"amount\":45.00,\"currency\":\"EUR\"},\"date\":\"${MONTH}-10\",\"type\":\"EXPENSE\",\"category\":\"GROCERIES\",\"description\":\"Spesa aggiornata\"}" \
   -o /dev/null -w "%{http_code}")
 if [[ "$UPDATE_STATUS" != "204" ]]; then
   echo "Errore update: HTTP $UPDATE_STATUS"

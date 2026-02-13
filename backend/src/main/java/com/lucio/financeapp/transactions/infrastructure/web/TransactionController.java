@@ -5,10 +5,11 @@ import com.lucio.financeapp.transactions.application.DeleteTransactionUseCase;
 import com.lucio.financeapp.transactions.application.ListTransactionsByMonthUseCase;
 import com.lucio.financeapp.transactions.application.RegisterTransactionUseCase;
 import com.lucio.financeapp.transactions.application.UpdateTransactionUseCase;
+import com.lucio.financeapp.shared.domain.Money;
+import com.lucio.financeapp.transactions.domain.Currency;
 import com.lucio.financeapp.transactions.domain.TransactionType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,24 +62,23 @@ public class TransactionController {
     }
 
     record CreateOrUpdateTransactionRequest(
-        UUID accountId,
-        @NotNull @Positive BigDecimal amount,
-        @NotNull LocalDate date,
-        @NotNull TransactionType type,
-        @NotNull String category,
-        String description
-) {
-    RegisterTransactionUseCase.RegisterTransactionCommand toRegisterCommand() {
-        return new RegisterTransactionUseCase.RegisterTransactionCommand(
-                accountId, amount, date, type, category, description
-        );
-    }
+            UUID accountId,
+            @NotNull BigDecimal amount,
+            @NotNull Currency currency,
 
-    UpdateTransactionUseCase.UpdateTransactionCommand toUpdateCommand() {
-        return new UpdateTransactionUseCase.UpdateTransactionCommand(
-                accountId, amount, date, type, category, description
-        );
+            @NotNull LocalDate date,
+            @NotNull TransactionType type,
+            @NotNull String category,
+            String description) {
+        RegisterTransactionUseCase.RegisterTransactionCommand toRegisterCommand() {
+            return new RegisterTransactionUseCase.RegisterTransactionCommand(
+                    accountId, amount, currency, date, type, category, description);
+        }
+
+        UpdateTransactionUseCase.UpdateTransactionCommand toUpdateCommand() {
+            return new UpdateTransactionUseCase.UpdateTransactionCommand(
+                    accountId, amount, currency, date, type, category, description);
+        }
     }
-}
 
 }

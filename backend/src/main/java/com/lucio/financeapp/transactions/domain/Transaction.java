@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.lucio.financeapp.shared.domain.Money;
+
 @Entity
 @Table(name = "transactions")
 public class Transaction {
@@ -12,8 +14,8 @@ public class Transaction {
     @Id
     private UUID id;
 
-    @Column(nullable = false)
-    private BigDecimal amount;
+    @Embedded
+    private Money amount;
 
     @Column(nullable = false)
     private LocalDate date;
@@ -35,7 +37,7 @@ public class Transaction {
 
     private Transaction(UUID id,
             UUID accountId,
-            BigDecimal amount,
+            Money amount,
             LocalDate date,
             TransactionType type,
             String category,
@@ -50,7 +52,7 @@ public class Transaction {
     }
 
     public static Transaction of(UUID accountId,
-            BigDecimal amount,
+            Money amount,
             LocalDate date,
             TransactionType type,
             String category,
@@ -62,7 +64,7 @@ public class Transaction {
         return id;
     }
 
-    public BigDecimal getAmount() {
+    public Money getAmount() {
         return amount;
     }
 
@@ -87,7 +89,7 @@ public class Transaction {
     }
 
     public void update(UUID accountId,
-            BigDecimal amount,
+            Money amount,
             LocalDate date,
             TransactionType type,
             String category,

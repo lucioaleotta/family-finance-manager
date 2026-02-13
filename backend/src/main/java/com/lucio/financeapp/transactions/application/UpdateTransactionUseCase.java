@@ -1,8 +1,10 @@
 package com.lucio.financeapp.transactions.application;
 
+import com.lucio.financeapp.transactions.domain.Currency;
 import com.lucio.financeapp.transactions.domain.Transaction;
 import com.lucio.financeapp.transactions.domain.TransactionType;
 import com.lucio.financeapp.transactions.domain.ports.TransactionRepository;
+import com.lucio.financeapp.shared.domain.Money;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +27,8 @@ public class UpdateTransactionUseCase {
         Transaction tx = repository.findById(id)
                 .orElseThrow(() -> new TransactionNotFoundException(id));
 
-        tx.update(command.accountId(), command.amount(), command.date(), command.type(), command.category(),
+        tx.update(command.accountId(), Money.of(command.amount(), command.currency()), command.date(), command.type(),
+                command.category(),
                 command.description());
         repository.save(tx);
     }
@@ -33,6 +36,7 @@ public class UpdateTransactionUseCase {
     public record UpdateTransactionCommand(
             UUID accountId,
             BigDecimal amount,
+            Currency currency,
             LocalDate date,
             TransactionType type,
             String category,

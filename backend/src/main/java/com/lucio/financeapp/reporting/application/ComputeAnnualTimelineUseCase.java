@@ -31,12 +31,12 @@ public class ComputeAnnualTimelineUseCase {
 
             BigDecimal income = txs.stream()
                     .filter(t -> t.type() == TransactionType.INCOME)
-                    .map(TransactionView::amount)
+                    .map(tx -> tx.amount().getAmount())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal expense = txs.stream()
                     .filter(t -> t.type() == TransactionType.EXPENSE)
-                    .map(TransactionView::amount)
+                    .map(tx -> tx.amount().getAmount())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal monthlyResult = income.subtract(expense);

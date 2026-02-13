@@ -27,11 +27,13 @@ public class ComputeMonthlyBalanceUseCase {
         BigDecimal income = txs.stream()
                 .filter(t -> t.type() == TransactionType.INCOME)
                 .map(TransactionView::amount)
+            .map(m -> m.getAmount())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal expense = txs.stream()
                 .filter(t -> t.type() == TransactionType.EXPENSE)
                 .map(TransactionView::amount)
+            .map(m -> m.getAmount())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal savings = income.subtract(expense);

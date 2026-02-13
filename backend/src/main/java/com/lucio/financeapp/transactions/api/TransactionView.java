@@ -1,15 +1,15 @@
 package com.lucio.financeapp.transactions.api;
 
 import com.lucio.financeapp.transactions.domain.TransactionType;
+import com.lucio.financeapp.shared.domain.Money;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
 public record TransactionView(
                 UUID id,
                 UUID accountId,
-                BigDecimal amount,
+                Money amount,
                 LocalDate date,
                 TransactionType type,
                 String category,
