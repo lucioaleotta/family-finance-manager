@@ -7,10 +7,11 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record TransactionView(
-        UUID id,
-        BigDecimal amount,
-        LocalDate date,
-        TransactionType type,
-        String category,
-        String description
-) {}
+                UUID id,
+                UUID accountId,
+                BigDecimal amount,
+                LocalDate date,
+                TransactionType type,
+                String category,
+                String description) {
+}

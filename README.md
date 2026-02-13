@@ -18,3 +18,6 @@ Backend application to manage household budget, including:
 This project follows a modular monolith approach using Spring Modulith and Domain-Driven Design principles.
 
 More details in `docs/architecture.md`.
+
+## Comandi utili
+- Cheat sheet operativa: [backend/docs/commands-cheatsheet.md](backend/docs/commands-cheatsheet.md)

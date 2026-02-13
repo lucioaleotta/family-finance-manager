@@ -28,11 +28,12 @@ class TransactionFacadeImpl implements TransactionFacade {
     private static TransactionView toView(Transaction tx) {
         return new TransactionView(
                 tx.getId(),
+                tx.getAccountId(),
                 tx.getAmount(),
                 tx.getDate(),
                 tx.getType(),
                 tx.getCategory(),
-                tx.getDescription()
-        );
+                tx.getDescription());
+
     }
 }

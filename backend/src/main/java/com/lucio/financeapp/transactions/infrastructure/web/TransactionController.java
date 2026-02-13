@@ -61,19 +61,24 @@ public class TransactionController {
     }
 
     record CreateOrUpdateTransactionRequest(
-            @NotNull @Positive BigDecimal amount,
-            @NotNull LocalDate date,
-            @NotNull TransactionType type,
-            @NotNull String category,
-            String description) {
-        RegisterTransactionUseCase.RegisterTransactionCommand toRegisterCommand() {
-            return new RegisterTransactionUseCase.RegisterTransactionCommand(
-                    amount, date, type, category, description);
-        }
-
-        UpdateTransactionUseCase.UpdateTransactionCommand toUpdateCommand() {
-            return new UpdateTransactionUseCase.UpdateTransactionCommand(
-                    amount, date, type, category, description);
-        }
+        UUID accountId,
+        @NotNull @Positive BigDecimal amount,
+        @NotNull LocalDate date,
+        @NotNull TransactionType type,
+        @NotNull String category,
+        String description
+) {
+    RegisterTransactionUseCase.RegisterTransactionCommand toRegisterCommand() {
+        return new RegisterTransactionUseCase.RegisterTransactionCommand(
+                accountId, amount, date, type, category, description
+        );
     }
+
+    UpdateTransactionUseCase.UpdateTransactionCommand toUpdateCommand() {
+        return new UpdateTransactionUseCase.UpdateTransactionCommand(
+                accountId, amount, date, type, category, description
+        );
+    }
+}
+
 }

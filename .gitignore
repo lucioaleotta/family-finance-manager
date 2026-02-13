@@ -4,6 +4,7 @@ target/
 
 # File di log
 *.log
+backend/.run/
 
 # File di configurazione IDE
 .idea/
@@ -33,4 +34,4 @@ Thumbs.db
 *.jar
 
 # Cartella Maven locale
-.m2/repository/
+**/.m2/

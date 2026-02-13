@@ -18,17 +18,20 @@ public class UpdateTransactionUseCase {
 
     public UpdateTransactionUseCase(TransactionRepository repository) {
         this.repository = repository;
+
     }
 
     public void handle(UUID id, UpdateTransactionCommand command) {
         Transaction tx = repository.findById(id)
                 .orElseThrow(() -> new TransactionNotFoundException(id));
 
-        tx.update(command.amount(), command.date(), command.type(), command.category(), command.description());
+        tx.update(command.accountId(), command.amount(), command.date(), command.type(), command.category(),
+                command.description());
         repository.save(tx);
     }
 
     public record UpdateTransactionCommand(
+            UUID accountId,
             BigDecimal amount,
             LocalDate date,
             TransactionType type,

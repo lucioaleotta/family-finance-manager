@@ -27,16 +27,21 @@ public class Transaction {
 
     private String description;
 
+    @Column(name = "account_id")
+    private UUID accountId;
+
     protected Transaction() {
     }
 
     private Transaction(UUID id,
+            UUID accountId,
             BigDecimal amount,
             LocalDate date,
             TransactionType type,
             String category,
             String description) {
         this.id = id;
+        this.accountId = accountId;
         this.amount = amount;
         this.date = date;
         this.type = type;
@@ -44,12 +49,13 @@ public class Transaction {
         this.description = description;
     }
 
-    public static Transaction of(BigDecimal amount,
+    public static Transaction of(UUID accountId,
+            BigDecimal amount,
             LocalDate date,
             TransactionType type,
             String category,
             String description) {
-        return new Transaction(UUID.randomUUID(), amount, date, type, category, description);
+        return new Transaction(UUID.randomUUID(), accountId, amount, date, type, category, description);
     }
 
     public UUID getId() {
@@ -76,11 +82,17 @@ public class Transaction {
         return description;
     }
 
-    public void update(BigDecimal amount,
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public void update(UUID accountId,
+            BigDecimal amount,
             LocalDate date,
             TransactionType type,
             String category,
             String description) {
+        this.accountId = accountId;
         this.amount = amount;
         this.date = date;
         this.type = type;

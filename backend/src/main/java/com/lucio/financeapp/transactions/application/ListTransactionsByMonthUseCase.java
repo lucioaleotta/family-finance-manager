@@ -22,6 +22,7 @@ public class ListTransactionsByMonthUseCase {
         return repository.findByMonth(month).stream()
                 .map(tx -> new TransactionView(
                         tx.getId(),
+                        tx.getAccountId(),
                         tx.getAmount(),
                         tx.getDate(),
                         tx.getType(),
