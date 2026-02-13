@@ -27,14 +27,15 @@ public class Transaction {
 
     private String description;
 
-    protected Transaction() {}
+    protected Transaction() {
+    }
 
     private Transaction(UUID id,
-                        BigDecimal amount,
-                        LocalDate date,
-                        TransactionType type,
-                        String category,
-                        String description) {
+            BigDecimal amount,
+            LocalDate date,
+            TransactionType type,
+            String category,
+            String description) {
         this.id = id;
         this.amount = amount;
         this.date = date;
@@ -44,17 +45,47 @@ public class Transaction {
     }
 
     public static Transaction of(BigDecimal amount,
-                                 LocalDate date,
-                                 TransactionType type,
-                                 String category,
-                                 String description) {
+            LocalDate date,
+            TransactionType type,
+            String category,
+            String description) {
         return new Transaction(UUID.randomUUID(), amount, date, type, category, description);
     }
 
-    public UUID getId() { return id; }
-    public BigDecimal getAmount() { return amount; }
-    public LocalDate getDate() { return date; }
-    public TransactionType getType() { return type; }
-    public String getCategory() { return category; }
-    public String getDescription() { return description; }
+    public UUID getId() {
+        return id;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public TransactionType getType() {
+        return type;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void update(BigDecimal amount,
+            LocalDate date,
+            TransactionType type,
+            String category,
+            String description) {
+        this.amount = amount;
+        this.date = date;
+        this.type = type;
+        this.category = category;
+        this.description = description;
+    }
+
 }

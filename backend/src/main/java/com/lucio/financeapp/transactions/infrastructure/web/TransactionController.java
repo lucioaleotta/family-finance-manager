@@ -1,7 +1,12 @@
 package com.lucio.financeapp.transactions.infrastructure.web;
 
+import com.lucio.financeapp.transactions.api.TransactionView;
+import com.lucio.financeapp.transactions.application.DeleteTransactionUseCase;
+import com.lucio.financeapp.transactions.application.ListTransactionsByMonthUseCase;
 import com.lucio.financeapp.transactions.application.RegisterTransactionUseCase;
+import com.lucio.financeapp.transactions.application.UpdateTransactionUseCase;
 import com.lucio.financeapp.transactions.domain.TransactionType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
@@ -9,35 +14,66 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/transactions")
 public class TransactionController {
 
-    private final RegisterTransactionUseCase useCase;
+    private final RegisterTransactionUseCase registerUseCase;
+    private final ListTransactionsByMonthUseCase listUseCase;
+    private final UpdateTransactionUseCase updateUseCase;
+    private final DeleteTransactionUseCase deleteUseCase;
 
-    public TransactionController(RegisterTransactionUseCase useCase) {
-        this.useCase = useCase;
+    public TransactionController(RegisterTransactionUseCase registerUseCase,
+            ListTransactionsByMonthUseCase listUseCase,
+            UpdateTransactionUseCase updateUseCase,
+            DeleteTransactionUseCase deleteUseCase) {
+        this.registerUseCase = registerUseCase;
+        this.listUseCase = listUseCase;
+        this.updateUseCase = updateUseCase;
+        this.deleteUseCase = deleteUseCase;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UUID register(@RequestBody CreateTransactionRequest request) {
-        return useCase.handle(request.toCommand());
+    public UUID register(@Valid @RequestBody CreateOrUpdateTransactionRequest request) {
+        return registerUseCase.handle(request.toRegisterCommand());
     }
 
-    record CreateTransactionRequest(
+    @GetMapping
+    public List<TransactionView> listByMonth(@RequestParam("month") String month) {
+        return listUseCase.handle(YearMonth.parse(month)); // YYYY-MM
+    }
+
+    @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void update(@PathVariable UUID id, @Valid @RequestBody CreateOrUpdateTransactionRequest request) {
+        updateUseCase.handle(id, request.toUpdateCommand());
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID id) {
+        deleteUseCase.handle(id);
+    }
+
+    record CreateOrUpdateTransactionRequest(
             @NotNull @Positive BigDecimal amount,
             @NotNull LocalDate date,
             @NotNull TransactionType type,
             @NotNull String category,
-            String description
-    ) {
-        RegisterTransactionUseCase.RegisterTransactionCommand toCommand() {
+            String description) {
+        RegisterTransactionUseCase.RegisterTransactionCommand toRegisterCommand() {
             return new RegisterTransactionUseCase.RegisterTransactionCommand(
-                    amount, date, type, category, description
-            );
+                    amount, date, type, category, description);
+        }
+
+        UpdateTransactionUseCase.UpdateTransactionCommand toUpdateCommand() {
+            return new UpdateTransactionUseCase.UpdateTransactionCommand(
+                    amount, date, type, category, description);
         }
     }
 }

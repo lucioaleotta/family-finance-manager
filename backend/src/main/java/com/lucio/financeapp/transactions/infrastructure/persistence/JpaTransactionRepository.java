@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 @Repository
 public class JpaTransactionRepository implements TransactionRepository {
@@ -32,8 +33,13 @@ public class JpaTransactionRepository implements TransactionRepository {
     }
 
     @Override
-    public Transaction findById(UUID id) {
-        return delegate.findById(id).orElse(null);
+    public Optional<Transaction> findById(UUID id) {
+        return delegate.findById(id);
+    }
+
+    @Override 
+    public void deleteById(UUID id){
+        delegate.deleteById(id);
     }
 }
 
