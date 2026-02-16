@@ -2,9 +2,9 @@ package com.lucio.financeapp.transactions.application;
 
 import com.lucio.financeapp.shared.domain.Money;
 import com.lucio.financeapp.transactions.domain.Transaction;
+import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.transactions.domain.TransactionType;
 import com.lucio.financeapp.transactions.domain.ports.TransactionRepository;
-import com.lucio.financeapp.transactions.domain.Currency;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

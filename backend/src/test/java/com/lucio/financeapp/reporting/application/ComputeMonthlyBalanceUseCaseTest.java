@@ -1,9 +1,9 @@
 package com.lucio.financeapp.reporting.application;
 
 import com.lucio.financeapp.shared.domain.Money;
+import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.transactions.api.TransactionFacade;
 import com.lucio.financeapp.transactions.api.TransactionView;
-import com.lucio.financeapp.transactions.domain.Currency;
 import com.lucio.financeapp.transactions.domain.TransactionKind;
 import com.lucio.financeapp.transactions.domain.TransactionType;
 import org.junit.jupiter.api.Test;

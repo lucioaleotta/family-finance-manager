@@ -1,6 +1,6 @@
 @ApplicationModule(
     displayName = "Reporting",
-    allowedDependencies = {"transactions", "assets", "shared"}
+    allowedDependencies = {"transactions", "transactions::api", "transactions::domain", "assets", "shared", "shared::domain"}
 )
 package com.lucio.financeapp.reporting;
 

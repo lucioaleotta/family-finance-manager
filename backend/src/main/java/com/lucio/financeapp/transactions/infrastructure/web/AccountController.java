@@ -4,7 +4,7 @@ import com.lucio.financeapp.transactions.api.AccountView;
 import com.lucio.financeapp.transactions.application.CreateAccountUseCase;
 import com.lucio.financeapp.transactions.application.ListAccountsUseCase;
 import com.lucio.financeapp.transactions.domain.AccountType;
-import com.lucio.financeapp.transactions.domain.Currency;
+import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.transactions.api.AccountBalanceView;
 import com.lucio.financeapp.transactions.application.ComputeAccountBalanceUseCase;
 

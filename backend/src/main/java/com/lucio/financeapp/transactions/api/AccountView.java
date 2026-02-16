@@ -1,7 +1,7 @@
 package com.lucio.financeapp.transactions.api;
 
 import com.lucio.financeapp.transactions.domain.AccountType;
-import com.lucio.financeapp.transactions.domain.Currency;
+import com.lucio.financeapp.shared.domain.Currency;
 
 import java.util.UUID;
 

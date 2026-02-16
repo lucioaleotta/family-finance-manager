@@ -1,6 +1,4 @@
 package com.lucio.financeapp.shared.domain;
-
-import com.lucio.financeapp.transactions.domain.Currency;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;

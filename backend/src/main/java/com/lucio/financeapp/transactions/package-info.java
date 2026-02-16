@@ -1,6 +1,6 @@
 @ApplicationModule(
     displayName = "Transactions",
-    allowedDependencies = "shared"
+    allowedDependencies = {"shared", "shared::domain"}
 )
 package com.lucio.financeapp.transactions;
 

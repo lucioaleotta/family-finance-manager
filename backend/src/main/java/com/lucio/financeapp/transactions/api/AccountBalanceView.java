@@ -1,6 +1,6 @@
 package com.lucio.financeapp.transactions.api;
 
-import com.lucio.financeapp.transactions.domain.Currency;
+import com.lucio.financeapp.shared.domain.Currency;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

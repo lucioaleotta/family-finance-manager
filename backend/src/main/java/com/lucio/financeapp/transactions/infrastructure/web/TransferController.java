@@ -1,7 +1,7 @@
 package com.lucio.financeapp.transactions.infrastructure.web;
 
 import com.lucio.financeapp.transactions.application.CreateTransferUseCase;
-import com.lucio.financeapp.transactions.domain.Currency;
+import com.lucio.financeapp.shared.domain.Currency;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

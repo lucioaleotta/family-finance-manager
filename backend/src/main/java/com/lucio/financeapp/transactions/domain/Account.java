@@ -1,6 +1,7 @@
 package com.lucio.financeapp.transactions.domain;
 
 import jakarta.persistence.*;
+import com.lucio.financeapp.shared.domain.Currency;
 
 import java.util.UUID;
 
