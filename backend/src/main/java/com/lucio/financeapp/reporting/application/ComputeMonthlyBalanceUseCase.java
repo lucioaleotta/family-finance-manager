@@ -6,6 +6,7 @@ import com.lucio.financeapp.transactions.api.TransactionView;
 import com.lucio.financeapp.transactions.domain.TransactionType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.lucio.financeapp.transactions.domain.TransactionKind;
 
 import java.math.BigDecimal;
 import java.time.YearMonth;
@@ -24,16 +25,18 @@ public class ComputeMonthlyBalanceUseCase {
     public MonthlyBalanceView handle(YearMonth month) {
         List<TransactionView> txs = transactionFacade.findByMonth(month);
 
-        BigDecimal income = txs.stream()
+        var standard = txs.stream()
+                .filter(t -> t.kind() == TransactionKind.STANDARD)
+                .toList();
+
+        BigDecimal income = standard.stream()
                 .filter(t -> t.type() == TransactionType.INCOME)
-                .map(TransactionView::amount)
-            .map(m -> m.getAmount())
+                .map(t -> t.amount().getAmount())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal expense = txs.stream()
+        BigDecimal expense = standard.stream()
                 .filter(t -> t.type() == TransactionType.EXPENSE)
-                .map(TransactionView::amount)
-            .map(m -> m.getAmount())
+                .map(t -> t.amount().getAmount())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal savings = income.subtract(expense);

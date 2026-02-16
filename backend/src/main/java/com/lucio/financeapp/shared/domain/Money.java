@@ -3,6 +3,8 @@ package com.lucio.financeapp.shared.domain;
 import com.lucio.financeapp.transactions.domain.Currency;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -14,6 +16,7 @@ public class Money {
     @Column(name = "amount_value", nullable = false, precision = 19, scale = 4)
     private BigDecimal amount;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "amount_currency", nullable = false, length = 3)
     private Currency currency;
 
@@ -54,9 +57,8 @@ public class Money {
     private void checkCurrency(Money other) {
         if (!this.currency.equals(other.currency)) {
             throw new IllegalArgumentException(
-                "Cannot operate on different currencies: " +
-                this.currency + " vs " + other.currency
-            );
+                    "Cannot operate on different currencies: " +
+                            this.currency + " vs " + other.currency);
         }
     }
 
@@ -74,10 +76,12 @@ public class Money {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Money money)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof Money money))
+            return false;
         return amount.compareTo(money.amount) == 0 &&
-               currency == money.currency;
+                currency == money.currency;
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.lucio.financeapp.reporting.application;
 import com.lucio.financeapp.reporting.api.MonthlySummaryView;
 import com.lucio.financeapp.transactions.api.TransactionFacade;
 import com.lucio.financeapp.transactions.api.TransactionView;
+import com.lucio.financeapp.transactions.domain.TransactionKind;
 import com.lucio.financeapp.transactions.domain.TransactionType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,16 +30,19 @@ public class ComputeAnnualTimelineUseCase {
             YearMonth ym = YearMonth.of(year, m);
             List<TransactionView> txs = transactionFacade.findByMonth(ym);
 
-            BigDecimal income = txs.stream()
+            var standard = txs.stream()
+                    .filter(t -> t.kind() == TransactionKind.STANDARD)
+                    .toList();
+
+            BigDecimal income = standard.stream()
                     .filter(t -> t.type() == TransactionType.INCOME)
-                    .map(tx -> tx.amount().getAmount())
+                    .map(t -> t.amount().getAmount())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal expense = txs.stream()
+            BigDecimal expense = standard.stream()
                     .filter(t -> t.type() == TransactionType.EXPENSE)
-                    .map(tx -> tx.amount().getAmount())
+                    .map(t -> t.amount().getAmount())
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-
             BigDecimal monthlyResult = income.subtract(expense);
 
             result.add(new MonthlySummaryView(ym, income, expense, monthlyResult));

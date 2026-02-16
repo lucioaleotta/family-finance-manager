@@ -193,9 +193,13 @@ Script: `backend/scripts/api-curl-tests.sh`
 
 Dalla cartella `backend`:
 
-- Esecuzione standard:
+- Esecuzione standard (lascia dati nel DB, default):
   ```bash
   ./scripts/api-curl-tests.sh
+  ```
+- Esecuzione con cleanup finale opzionale:
+  ```bash
+  CLEANUP=true ./scripts/api-curl-tests.sh
   ```
 - Esecuzione con host custom:
   ```bash
@@ -210,5 +214,9 @@ Variabili supportate:
 - `BASE_URL` (default: `http://localhost:8080`)
 - `MONTH` formato `YYYY-MM` (default: mese corrente)
 - `YEAR` formato `YYYY` (default: anno corrente)
+- `ACCOUNT_NAME_FROM` (default: `Fineco-<timestamp>`)
+- `ACCOUNT_NAME_TO` (default: `N26-<timestamp>`)
+- `TRANSFER_AMOUNT` (default: `10.00`)
+- `CLEANUP` (default: `false`; se `true` elimina le transazioni create nel run)
 
-Nota: lo script crea account e transazione di test, poi elimina la transazione alla fine.
+Nota: lo script crea account, transazione e transfer di test; di default mantiene i dati per ispezione.

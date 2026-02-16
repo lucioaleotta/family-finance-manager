@@ -34,14 +34,13 @@ public class RegisterTransactionUseCase {
                                 command.amount(),
                                 command.currency());
 
-                Transaction tx = Transaction.of(
+                Transaction tx = Transaction.standard(
                                 accountId,
                                 money,
                                 command.date(),
                                 command.type(),
                                 command.category(),
                                 command.description());
-
                 repository.save(tx);
                 return tx.getId();
         }

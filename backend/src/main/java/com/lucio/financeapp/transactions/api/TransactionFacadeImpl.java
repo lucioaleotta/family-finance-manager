@@ -33,7 +33,9 @@ class TransactionFacadeImpl implements TransactionFacade {
                 tx.getDate(),
                 tx.getType(),
                 tx.getCategory(),
-                tx.getDescription());
+                tx.getDescription(),
+                tx.getKind(),
+                tx.getTransferId());
 
     }
 }

@@ -1,7 +1,7 @@
 package com.lucio.financeapp.transactions.domain;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
+
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -32,6 +32,13 @@ public class Transaction {
     @Column(name = "account_id")
     private UUID accountId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TransactionKind kind;
+
+    @Column(name = "transfer_id")
+    private UUID transferId;
+
     protected Transaction() {
     }
 
@@ -41,7 +48,9 @@ public class Transaction {
             LocalDate date,
             TransactionType type,
             String category,
-            String description) {
+            String description,
+            TransactionKind kind,
+            UUID transferId) {
         this.id = id;
         this.accountId = accountId;
         this.amount = amount;
@@ -49,15 +58,29 @@ public class Transaction {
         this.type = type;
         this.category = category;
         this.description = description;
+        this.kind = kind;
+        this.transferId = transferId;
     }
 
-    public static Transaction of(UUID accountId,
+    public static Transaction standard(UUID accountId,
             Money amount,
             LocalDate date,
             TransactionType type,
             String category,
             String description) {
-        return new Transaction(UUID.randomUUID(), accountId, amount, date, type, category, description);
+        return new Transaction(UUID.randomUUID(), accountId, amount, date, type, category, description,
+                TransactionKind.STANDARD, null);
+    }
+
+    public static Transaction transfer(UUID accountId,
+            Money amount,
+            LocalDate date,
+            TransactionType type,
+            String category,
+            String description,
+            UUID transferId) {
+        return new Transaction(UUID.randomUUID(), accountId, amount, date, type, category, description,
+                TransactionKind.TRANSFER, transferId);
     }
 
     public UUID getId() {
@@ -86,6 +109,14 @@ public class Transaction {
 
     public UUID getAccountId() {
         return accountId;
+    }
+
+    public TransactionKind getKind() {
+        return kind;
+    }
+
+    public UUID getTransferId() {
+        return transferId;
     }
 
     public void update(UUID accountId,

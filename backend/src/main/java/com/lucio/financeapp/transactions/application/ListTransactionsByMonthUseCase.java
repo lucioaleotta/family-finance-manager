@@ -27,8 +27,9 @@ public class ListTransactionsByMonthUseCase {
                         tx.getDate(),
                         tx.getType(),
                         tx.getCategory(),
-                        tx.getDescription()
-                ))
+                        tx.getDescription(),
+                        tx.getKind(),
+                        tx.getTransferId()))
                 .toList();
     }
 }
