@@ -11,20 +11,17 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 class ArchitectureRulesTest {
 
     @ArchTest
-    static final ArchRule application_should_not_depend_on_infrastructure =
-            noClasses()
-                    .that().resideInAPackage("..application..")
-                    .should().dependOnClassesThat().resideInAPackage("..infrastructure..");
+    static final ArchRule application_should_not_depend_on_infrastructure = noClasses()
+            .that().resideInAPackage("..application..")
+            .should().dependOnClassesThat().resideInAPackage("..infrastructure..");
 
     @ArchTest
-    static final ArchRule domain_should_not_depend_on_application =
-            noClasses()
-                    .that().resideInAPackage("..domain..")
-                    .should().dependOnClassesThat().resideInAPackage("..application..");
+    static final ArchRule domain_should_not_depend_on_application = noClasses()
+            .that().resideInAPackage("..domain..")
+            .should().dependOnClassesThat().resideInAPackage("..application..");
 
     @ArchTest
-    static final ArchRule domain_should_not_depend_on_infrastructure =
-            noClasses()
-                    .that().resideInAPackage("..domain..")
-                    .should().dependOnClassesThat().resideInAPackage("..infrastructure..");
+    static final ArchRule domain_should_not_depend_on_infrastructure = noClasses()
+            .that().resideInAPackage("..domain..")
+            .should().dependOnClassesThat().resideInAPackage("..infrastructure..");
 }

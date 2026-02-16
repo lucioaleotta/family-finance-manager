@@ -9,6 +9,7 @@ ACCOUNT_NAME_FROM="${ACCOUNT_NAME_FROM:-Fineco-${TIMESTAMP}}"
 ACCOUNT_NAME_TO="${ACCOUNT_NAME_TO:-N26-${TIMESTAMP}}"
 TRANSFER_AMOUNT="${TRANSFER_AMOUNT:-10.00}"
 CLEANUP="${CLEANUP:-false}"
+ASSERTS="${ASSERTS:-true}"
 
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -51,7 +52,51 @@ pretty() {
   fi
 }
 
+is_true() {
+  local value="${1:-false}"
+  local normalized
+  normalized="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  [[ "$normalized" == "true" ]]
+}
+
+fetch_json() {
+  local url="$1"
+  local response
+  response=$(curl -sS "$url" -w "\n%{http_code}")
+  split_body_status "$response"
+  require_http_status "200"
+  printf '%s' "$HTTP_BODY"
+}
+
+assert_or_fail() {
+  local description="$1"
+  shift
+  if "$@"; then
+    echo "✔ Assert: $description"
+  else
+    echo "✘ Assert fallita: $description"
+    exit 1
+  fi
+}
+
+assert_python_json() {
+  local description="$1"
+  local json_payload="$2"
+  local python_code="$3"
+
+  if ! python3 -c "import json,sys; data=json.loads(sys.argv[1]); ${python_code}" "$json_payload"; then
+    echo "✘ Assert fallita: $description"
+    return 1
+  fi
+
+  echo "✔ Assert: $description"
+}
+
 require_cmd curl
+
+if is_true "$ASSERTS"; then
+  require_cmd python3
+fi
 
 echo "== API smoke test =="
 echo "BASE_URL=$BASE_URL"
@@ -61,6 +106,7 @@ echo "ACCOUNT_NAME_FROM=$ACCOUNT_NAME_FROM"
 echo "ACCOUNT_NAME_TO=$ACCOUNT_NAME_TO"
 echo "TRANSFER_AMOUNT=$TRANSFER_AMOUNT"
 echo "CLEANUP=$CLEANUP"
+echo "ASSERTS=$ASSERTS"
 echo
 
 echo "[1] Create source account"
@@ -100,7 +146,16 @@ echo "TO_ACCOUNT_ID=$TO_ACCOUNT_ID"
 echo
 
 echo "[3] List accounts"
-curl -sS "$BASE_URL/api/accounts" | pretty
+ACCOUNTS_JSON="$(fetch_json "$BASE_URL/api/accounts")"
+printf '%s\n' "$ACCOUNTS_JSON" | pretty
+if is_true "$ASSERTS"; then
+  assert_python_json "accounts contiene entrambi gli account creati" "$ACCOUNTS_JSON" '
+from_id = "'"$FROM_ACCOUNT_ID"'"
+to_id = "'"$TO_ACCOUNT_ID"'"
+ids = {item.get("id") for item in data}
+assert from_id in ids and to_id in ids
+'
+fi
 echo
 
 echo "[4] Create transaction"
@@ -122,7 +177,17 @@ echo "TRANSACTION_ID=$TRANSACTION_ID"
 echo
 
 echo "[5] List transactions by month"
-curl -sS "$BASE_URL/api/transactions?month=$MONTH" | pretty
+TX_BY_MONTH_JSON="$(fetch_json "$BASE_URL/api/transactions?month=$MONTH")"
+printf '%s\n' "$TX_BY_MONTH_JSON" | pretty
+if is_true "$ASSERTS"; then
+  assert_python_json "transazione standard creata presente" "$TX_BY_MONTH_JSON" '
+tx_id = "'"$TRANSACTION_ID"'"
+tx = next((item for item in data if item.get("id") == tx_id), None)
+assert tx is not None
+assert tx.get("kind") == "STANDARD"
+assert tx.get("type") == "EXPENSE"
+'
+fi
 echo
 
 echo "[6] Update transaction"
@@ -135,6 +200,17 @@ if [[ "$UPDATE_STATUS" != "204" ]]; then
   exit 1
 fi
 echo "HTTP $UPDATE_STATUS"
+if is_true "$ASSERTS"; then
+  TX_AFTER_UPDATE_JSON="$(fetch_json "$BASE_URL/api/transactions?month=$MONTH")"
+  assert_python_json "transazione aggiornata correttamente" "$TX_AFTER_UPDATE_JSON" '
+tx_id = "'"$TRANSACTION_ID"'"
+tx = next((item for item in data if item.get("id") == tx_id), None)
+assert tx is not None
+amount = tx.get("amount", {}).get("amount")
+assert round(float(amount), 2) == 45.00
+assert tx.get("description") == "Spesa aggiornata"
+'
+fi
 echo
 
 echo "[7] Create transfer"
@@ -153,18 +229,57 @@ if ! is_uuid "$TRANSFER_ID"; then
 fi
 
 echo "TRANSFER_ID=$TRANSFER_ID"
+if is_true "$ASSERTS"; then
+  TX_AFTER_TRANSFER_JSON="$(fetch_json "$BASE_URL/api/transactions?month=$MONTH")"
+  assert_python_json "transfer genera due movimenti collegati" "$TX_AFTER_TRANSFER_JSON" '
+transfer_id = "'"$TRANSFER_ID"'"
+related = [item for item in data if item.get("transferId") == transfer_id]
+assert len(related) == 2
+types = sorted(item.get("type") for item in related)
+assert types == ["EXPENSE", "INCOME"]
+'
+fi
 echo
 
 echo "[8] Reporting monthly"
-curl -sS "$BASE_URL/api/reporting/monthly?month=$MONTH" | pretty
+REPORT_MONTHLY_JSON="$(fetch_json "$BASE_URL/api/reporting/monthly?month=$MONTH")"
+printf '%s\n' "$REPORT_MONTHLY_JSON" | pretty
+if is_true "$ASSERTS"; then
+  assert_python_json "reporting monthly coerente" "$REPORT_MONTHLY_JSON" '
+assert data.get("month") == "'"$MONTH"'"
+income = float(data.get("totalIncome", 0))
+expense = float(data.get("totalExpense", 0))
+savings = float(data.get("savings", 0))
+assert round(income - expense, 2) == round(savings, 2)
+'
+fi
 echo
 
 echo "[9] Reporting annual timeline"
-curl -sS "$BASE_URL/api/reporting/annual/timeline?year=$YEAR" | pretty
+REPORT_TIMELINE_JSON="$(fetch_json "$BASE_URL/api/reporting/annual/timeline?year=$YEAR")"
+printf '%s\n' "$REPORT_TIMELINE_JSON" | pretty
+if is_true "$ASSERTS"; then
+  assert_python_json "reporting annual timeline valido" "$REPORT_TIMELINE_JSON" '
+assert isinstance(data, list)
+assert len(data) == 12
+months = [item.get("month", "") for item in data]
+assert all(str(m).startswith("'"$YEAR"'-") for m in months)
+'
+fi
 echo
 
 echo "[10] Reporting annual total"
-curl -sS "$BASE_URL/api/reporting/annual/total?year=$YEAR" | pretty
+REPORT_ANNUAL_JSON="$(fetch_json "$BASE_URL/api/reporting/annual/total?year=$YEAR")"
+printf '%s\n' "$REPORT_ANNUAL_JSON" | pretty
+if is_true "$ASSERTS"; then
+  assert_python_json "reporting annual total coerente" "$REPORT_ANNUAL_JSON" '
+assert int(data.get("year")) == int("'"$YEAR"'")
+income = float(data.get("totalIncome", 0))
+expense = float(data.get("totalExpense", 0))
+result = float(data.get("annualResult", 0))
+assert round(income - expense, 2) == round(result, 2)
+'
+fi
 echo
 
 echo "[11] Optional cleanup"
@@ -217,7 +332,26 @@ fi
 echo
 
 echo "[12] Final list transactions by month"
-curl -sS "$BASE_URL/api/transactions?month=$MONTH" | pretty
+TX_FINAL_JSON="$(fetch_json "$BASE_URL/api/transactions?month=$MONTH")"
+printf '%s\n' "$TX_FINAL_JSON" | pretty
+if is_true "$ASSERTS"; then
+  if [[ "$CLEANUP_NORMALIZED" == "true" ]]; then
+    assert_python_json "cleanup rimuove transazioni create nel run" "$TX_FINAL_JSON" '
+forbidden = {"'"$TRANSACTION_ID"'", "'"$TRANSFER_ID"'"}
+tx_ids = {item.get("id") for item in data}
+transfer_ids = {item.get("transferId") for item in data}
+assert "'"$TRANSACTION_ID"'" not in tx_ids
+assert "'"$TRANSFER_ID"'" not in transfer_ids
+'
+  else
+    assert_python_json "senza cleanup i dati del run restano nel DB" "$TX_FINAL_JSON" '
+tx_ids = {item.get("id") for item in data}
+transfer_ids = {item.get("transferId") for item in data}
+assert "'"$TRANSACTION_ID"'" in tx_ids
+assert "'"$TRANSFER_ID"'" in transfer_ids
+'
+  fi
+fi
 echo
 
 echo "Completato."

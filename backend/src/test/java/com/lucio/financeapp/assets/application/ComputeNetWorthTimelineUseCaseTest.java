@@ -51,19 +51,21 @@ class ComputeNetWorthTimelineUseCaseTest {
         when(listAccounts.handle()).thenReturn(List.of(
                 new AccountView(accountA, "Fineco", AccountType.CHECKING, Currency.EUR),
                 new AccountView(accountB, "Cash", AccountType.CASH, Currency.EUR),
-                new AccountView(chfAccount, "CHF", AccountType.CHECKING, Currency.CHF)
-        ));
+                new AccountView(chfAccount, "CHF", AccountType.CHECKING, Currency.CHF)));
 
         when(accountBalance.handle(eq(accountA), any(LocalDate.class)))
-                .thenReturn(new AccountBalanceView(accountA, LocalDate.of(2026, 1, 31), new BigDecimal("100.00"), Currency.EUR));
+                .thenReturn(new AccountBalanceView(accountA, LocalDate.of(2026, 1, 31), new BigDecimal("100.00"),
+                        Currency.EUR));
         when(accountBalance.handle(eq(accountB), any(LocalDate.class)))
-                .thenReturn(new AccountBalanceView(accountB, LocalDate.of(2026, 1, 31), new BigDecimal("50.00"), Currency.EUR));
+                .thenReturn(new AccountBalanceView(accountB, LocalDate.of(2026, 1, 31), new BigDecimal("50.00"),
+                        Currency.EUR));
 
         when(snapshots.findByMonthAndCurrency(any(YearMonth.class), eq(Currency.EUR)))
                 .thenAnswer(invocation -> {
                     YearMonth ym = invocation.getArgument(0);
                     if (ym.equals(YearMonth.of(2026, 2))) {
-                        return Optional.of(InvestmentSnapshot.of(ym, Money.of(new BigDecimal("1000.00"), Currency.EUR), "PAC"));
+                        return Optional.of(
+                                InvestmentSnapshot.of(ym, Money.of(new BigDecimal("1000.00"), Currency.EUR), "PAC"));
                     }
                     return Optional.empty();
                 });

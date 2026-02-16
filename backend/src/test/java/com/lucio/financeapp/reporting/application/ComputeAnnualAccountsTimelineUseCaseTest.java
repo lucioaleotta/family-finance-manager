@@ -38,11 +38,9 @@ class ComputeAnnualAccountsTimelineUseCaseTest {
 
         when(transactionFacade.findByMonth(any(YearMonth.class))).thenReturn(List.of());
         when(transactionFacade.findByMonth(YearMonth.of(2026, 1))).thenReturn(List.of(
-                tx(accountA, "100.00", TransactionType.INCOME)
-        ));
+                tx(accountA, "100.00", TransactionType.INCOME)));
         when(transactionFacade.findByMonth(YearMonth.of(2026, 2))).thenReturn(List.of(
-                tx(accountB, "40.00", TransactionType.EXPENSE)
-        ));
+                tx(accountB, "40.00", TransactionType.EXPENSE)));
 
         var result = useCase.handle(2026);
 
@@ -86,7 +84,6 @@ class ComputeAnnualAccountsTimelineUseCaseTest {
                 "CAT",
                 "desc",
                 TransactionKind.STANDARD,
-                null
-        );
+                null);
     }
 }

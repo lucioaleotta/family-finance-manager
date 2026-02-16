@@ -31,8 +31,7 @@ public class TransferController {
                 request.amount(),
                 request.currency(),
                 request.date(),
-                request.description()
-        ));
+                request.description()));
     }
 
     record CreateTransferRequest(
@@ -41,6 +40,6 @@ public class TransferController {
             @NotNull @Positive BigDecimal amount,
             @NotNull Currency currency,
             @NotNull LocalDate date,
-            String description
-    ) {}
+            String description) {
+    }
 }

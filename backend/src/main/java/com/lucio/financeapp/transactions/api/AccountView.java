@@ -6,8 +6,8 @@ import com.lucio.financeapp.shared.domain.Currency;
 import java.util.UUID;
 
 public record AccountView(
-        UUID id,
-        String name,
-        AccountType type,
-        Currency currency
-) {}
+                UUID id,
+                String name,
+                AccountType type,
+                Currency currency) {
+}

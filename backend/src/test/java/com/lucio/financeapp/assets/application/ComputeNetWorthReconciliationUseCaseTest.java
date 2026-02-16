@@ -59,17 +59,18 @@ class ComputeNetWorthReconciliationUseCaseTest {
         YearMonth feb = YearMonth.of(2026, 2);
 
         when(netWorthTimeline.handle(2026, Currency.EUR)).thenReturn(List.of(
-                new NetWorthMonthlyView(jan, Currency.EUR, new BigDecimal("1100.00"), new BigDecimal("100.00"), new BigDecimal("1200.00")),
-                new NetWorthMonthlyView(feb, Currency.EUR, new BigDecimal("1200.00"), new BigDecimal("150.00"), new BigDecimal("1350.00"))
-        ));
+                new NetWorthMonthlyView(jan, Currency.EUR, new BigDecimal("1100.00"), new BigDecimal("100.00"),
+                        new BigDecimal("1200.00")),
+                new NetWorthMonthlyView(feb, Currency.EUR, new BigDecimal("1200.00"), new BigDecimal("150.00"),
+                        new BigDecimal("1350.00"))));
 
         UUID accountId = UUID.randomUUID();
         when(listAccounts.handle()).thenReturn(List.of(
-                new AccountView(accountId, "Fineco", AccountType.CHECKING, Currency.EUR)
-        ));
+                new AccountView(accountId, "Fineco", AccountType.CHECKING, Currency.EUR)));
 
         when(accountBalance.handle(eq(accountId), eq(LocalDate.of(2025, 12, 31))))
-                .thenReturn(new AccountBalanceView(accountId, LocalDate.of(2025, 12, 31), new BigDecimal("900.00"), Currency.EUR));
+                .thenReturn(new AccountBalanceView(accountId, LocalDate.of(2025, 12, 31), new BigDecimal("900.00"),
+                        Currency.EUR));
 
         when(snapshots.findByMonthAndCurrency(eq(YearMonth.of(2025, 12)), eq(Currency.EUR)))
                 .thenReturn(Optional.of(InvestmentSnapshot.of(YearMonth.of(2025, 12),
@@ -79,13 +80,11 @@ class ComputeNetWorthReconciliationUseCaseTest {
         when(transactionFacade.findByMonth(jan)).thenReturn(List.of(
                 tx(new BigDecimal("300.00"), TransactionType.INCOME, TransactionKind.STANDARD),
                 tx(new BigDecimal("50.00"), TransactionType.EXPENSE, TransactionKind.STANDARD),
-                tx(new BigDecimal("999.00"), TransactionType.INCOME, TransactionKind.TRANSFER)
-        ));
+                tx(new BigDecimal("999.00"), TransactionType.INCOME, TransactionKind.TRANSFER)));
 
         when(transactionFacade.findByMonth(feb)).thenReturn(List.of(
                 tx(new BigDecimal("100.00"), TransactionType.INCOME, TransactionKind.STANDARD),
-                tx(new BigDecimal("50.00"), TransactionType.EXPENSE, TransactionKind.STANDARD)
-        ));
+                tx(new BigDecimal("50.00"), TransactionType.EXPENSE, TransactionKind.STANDARD)));
 
         var result = useCase.handle(2026, Currency.EUR);
 
@@ -114,7 +113,6 @@ class ComputeNetWorthReconciliationUseCaseTest {
                 "CAT",
                 "desc",
                 kind,
-                kind == TransactionKind.TRANSFER ? UUID.randomUUID() : null
-        );
+                kind == TransactionKind.TRANSFER ? UUID.randomUUID() : null);
     }
 }

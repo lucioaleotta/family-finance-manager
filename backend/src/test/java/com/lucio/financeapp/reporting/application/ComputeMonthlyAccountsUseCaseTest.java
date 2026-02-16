@@ -40,8 +40,7 @@ class ComputeMonthlyAccountsUseCaseTest {
                 tx(accountB, "20.00", TransactionType.EXPENSE),
                 tx(accountA, "100.00", TransactionType.INCOME),
                 tx(accountA, "40.00", TransactionType.EXPENSE),
-                tx(null, "999.00", TransactionType.INCOME)
-        ));
+                tx(null, "999.00", TransactionType.INCOME)));
 
         var result = useCase.handle(month);
 
@@ -70,7 +69,6 @@ class ComputeMonthlyAccountsUseCaseTest {
                 "CAT",
                 "desc",
                 TransactionKind.STANDARD,
-                null
-        );
+                null);
     }
 }

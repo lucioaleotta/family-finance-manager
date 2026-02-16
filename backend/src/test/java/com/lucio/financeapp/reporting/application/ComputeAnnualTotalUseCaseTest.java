@@ -26,10 +26,11 @@ class ComputeAnnualTotalUseCaseTest {
     @Test
     void shouldComputeYearlyTotalsAndAverageOnMonthsWithData() {
         when(timelineUseCase.handle(2026)).thenReturn(List.of(
-                new MonthlySummaryView(YearMonth.of(2026, 1), new BigDecimal("100.00"), new BigDecimal("20.00"), new BigDecimal("80.00")),
+                new MonthlySummaryView(YearMonth.of(2026, 1), new BigDecimal("100.00"), new BigDecimal("20.00"),
+                        new BigDecimal("80.00")),
                 new MonthlySummaryView(YearMonth.of(2026, 2), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO),
-                new MonthlySummaryView(YearMonth.of(2026, 3), new BigDecimal("50.00"), new BigDecimal("70.00"), new BigDecimal("-20.00"))
-        ));
+                new MonthlySummaryView(YearMonth.of(2026, 3), new BigDecimal("50.00"), new BigDecimal("70.00"),
+                        new BigDecimal("-20.00"))));
 
         var result = useCase.handle(2026);
 
@@ -43,8 +44,7 @@ class ComputeAnnualTotalUseCaseTest {
     @Test
     void shouldReturnZeroAverageWhenNoData() {
         when(timelineUseCase.handle(2027)).thenReturn(List.of(
-                new MonthlySummaryView(YearMonth.of(2027, 1), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)
-        ));
+                new MonthlySummaryView(YearMonth.of(2027, 1), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)));
 
         var result = useCase.handle(2027);
 
