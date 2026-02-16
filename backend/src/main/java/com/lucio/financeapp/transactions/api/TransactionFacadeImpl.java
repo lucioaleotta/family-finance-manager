@@ -7,6 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.YearMonth;
 import java.util.List;
+import java.time.LocalDate;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -21,6 +23,20 @@ class TransactionFacadeImpl implements TransactionFacade {
     @Override
     public List<TransactionView> findByMonth(YearMonth month) {
         return repository.findByMonth(month).stream()
+                .map(TransactionFacadeImpl::toView)
+                .toList();
+    }
+
+    @Override
+    public List<TransactionView> findByMonthAndAccount(YearMonth month, UUID accountId) {
+        return repository.findByMonthAndAccount(month, accountId).stream()
+                .map(TransactionFacadeImpl::toView)
+                .toList();
+    }
+
+    @Override
+    public List<TransactionView> findByAccountUpTo(UUID accountId, LocalDate asOf) {
+        return repository.findByAccountUpTo(accountId, asOf).stream()
                 .map(TransactionFacadeImpl::toView)
                 .toList();
     }

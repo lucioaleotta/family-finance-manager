@@ -5,6 +5,8 @@ import com.lucio.financeapp.transactions.application.CreateAccountUseCase;
 import com.lucio.financeapp.transactions.application.ListAccountsUseCase;
 import com.lucio.financeapp.transactions.domain.AccountType;
 import com.lucio.financeapp.transactions.domain.Currency;
+import com.lucio.financeapp.transactions.api.AccountBalanceView;
+import com.lucio.financeapp.transactions.application.ComputeAccountBalanceUseCase;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -21,10 +24,14 @@ public class AccountController {
 
     private final CreateAccountUseCase createUseCase;
     private final ListAccountsUseCase listUseCase;
+    private final ComputeAccountBalanceUseCase balanceUseCase;
 
-    public AccountController(CreateAccountUseCase createUseCase, ListAccountsUseCase listUseCase) {
+    public AccountController(CreateAccountUseCase createUseCase,
+            ListAccountsUseCase listUseCase,
+            ComputeAccountBalanceUseCase balanceUseCase) {
         this.createUseCase = createUseCase;
         this.listUseCase = listUseCase;
+        this.balanceUseCase = balanceUseCase;
     }
 
     @PostMapping
@@ -44,4 +51,10 @@ public class AccountController {
             @NotNull AccountType type,
             @NotNull Currency currency) {
     }
+
+    @GetMapping("/{accountId}/balance")
+    public AccountBalanceView balance(@PathVariable UUID accountId, @RequestParam("asOf") String asOf) {
+        return balanceUseCase.handle(accountId, LocalDate.parse(asOf));
+    }
+
 }

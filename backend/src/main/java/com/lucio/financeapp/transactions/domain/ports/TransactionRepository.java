@@ -6,6 +6,7 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.LocalDate;
 
 public interface TransactionRepository {
 
@@ -16,4 +17,8 @@ public interface TransactionRepository {
     Optional<Transaction> findById(UUID id);
 
     void deleteById(UUID id);
+
+    List<Transaction> findByMonthAndAccount(YearMonth month, UUID accountId);
+
+    List<Transaction> findByAccountUpTo(UUID accountId, LocalDate asOf);
 }

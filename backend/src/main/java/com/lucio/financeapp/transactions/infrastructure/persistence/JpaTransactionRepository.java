@@ -37,12 +37,28 @@ public class JpaTransactionRepository implements TransactionRepository {
         return delegate.findById(id);
     }
 
-    @Override 
-    public void deleteById(UUID id){
+    @Override
+    public void deleteById(UUID id) {
         delegate.deleteById(id);
+    }
+
+    @Override
+    public List<Transaction> findByMonthAndAccount(YearMonth month, UUID accountId) {
+        LocalDate start = month.atDay(1);
+        LocalDate end = month.atEndOfMonth();
+        return delegate.findByAccountIdAndDateBetween(accountId, start, end);
+    }
+
+    @Override
+    public List<Transaction> findByAccountUpTo(UUID accountId, LocalDate asOf) {
+        return delegate.findByAccountIdAndDateLessThanEqual(accountId, asOf);
     }
 }
 
 interface SpringDataTransactionRepository extends JpaRepository<Transaction, UUID> {
     List<Transaction> findByDateBetween(LocalDate start, LocalDate end);
+
+    List<Transaction> findByAccountIdAndDateBetween(UUID accountId, LocalDate start, LocalDate end);
+
+    List<Transaction> findByAccountIdAndDateLessThanEqual(UUID accountId, LocalDate asOf);
 }
