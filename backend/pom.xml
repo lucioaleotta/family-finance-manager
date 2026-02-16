@@ -58,6 +58,12 @@
             <artifactId>spring-modulith-starter-jpa</artifactId>
         </dependency>
 
+        <!-- flyway -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

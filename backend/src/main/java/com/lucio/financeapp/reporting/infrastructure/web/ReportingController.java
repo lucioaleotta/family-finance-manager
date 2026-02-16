@@ -9,6 +9,11 @@ import com.lucio.financeapp.reporting.application.ComputeAnnualTimelineUseCase;
 import com.lucio.financeapp.reporting.application.ComputeAnnualTotalUseCase;
 import com.lucio.financeapp.reporting.api.MonthlyAccountSummaryView;
 import com.lucio.financeapp.reporting.application.ComputeMonthlyAccountsUseCase;
+import com.lucio.financeapp.reporting.api.AnnualAccountSummaryView;
+import com.lucio.financeapp.reporting.application.ComputeAnnualAccountsUseCase;
+import com.lucio.financeapp.reporting.api.MonthlyAccountTimelineView;
+import com.lucio.financeapp.reporting.application.ComputeAnnualAccountsTimelineUseCase;
+
 // ...
 import java.util.List;
 import java.time.YearMonth;
@@ -22,14 +27,22 @@ public class ReportingController {
     private final ComputeAnnualTotalUseCase annualTotal;
     private final ComputeMonthlyAccountsUseCase monthlyAccounts;
 
+    private final ComputeAnnualAccountsUseCase annualAccounts;
+
+    private final ComputeAnnualAccountsTimelineUseCase annualAccountsTimeline;
+
     public ReportingController(ComputeMonthlyBalanceUseCase useCase,
             ComputeAnnualTimelineUseCase annualTimeline,
             ComputeAnnualTotalUseCase annualTotal,
-            ComputeMonthlyAccountsUseCase monthlyAccounts) {
+            ComputeMonthlyAccountsUseCase monthlyAccounts,
+            ComputeAnnualAccountsUseCase annualAccounts,
+            ComputeAnnualAccountsTimelineUseCase annualAccountsTimeline) {
         this.useCase = useCase;
         this.annualTimeline = annualTimeline;
         this.annualTotal = annualTotal;
         this.monthlyAccounts = monthlyAccounts;
+        this.annualAccounts = annualAccounts;
+        this.annualAccountsTimeline = annualAccountsTimeline;
     }
 
     @GetMapping("/annual/timeline")
@@ -51,4 +64,15 @@ public class ReportingController {
     public List<MonthlyAccountSummaryView> monthlyAccounts(@RequestParam("month") String month) {
         return monthlyAccounts.handle(YearMonth.parse(month));
     }
+
+    @GetMapping("/annual/accounts")
+    public List<AnnualAccountSummaryView> annualAccounts(@RequestParam("year") int year) {
+        return annualAccounts.handle(year);
+    }
+
+    @GetMapping("/annual/timeline/accounts")
+    public List<MonthlyAccountTimelineView> annualAccountsTimeline(@RequestParam("year") int year) {
+        return annualAccountsTimeline.handle(year);
+    }
+
 }
