@@ -35,3 +35,8 @@ Thumbs.db
 
 # Cartella Maven locale
 **/.m2/
+
+# Node modules e package files nella root (quelli veri sono in frontend/)
+/node_modules/
+/package.json
+/package-lock.json
