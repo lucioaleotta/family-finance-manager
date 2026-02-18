@@ -23,15 +23,13 @@ public class NetWorthController {
     }
 
     @GetMapping("/timeline")
-    public List<NetWorthMonthlyView> timeline(@RequestParam("year") int year,
-            @RequestParam("currency") Currency currency) {
-        return useCase.handle(year, currency);
+    public List<NetWorthMonthlyView> timeline(@RequestParam("year") int year) {
+        return useCase.handle(year);
     }
 
     @GetMapping("/reconciliation")
-    public List<NetWorthReconciliationView> reconciliation(@RequestParam("year") int year,
-            @RequestParam("currency") Currency currency) {
-        return reconciliationUseCase.handle(year, currency);
+    public List<NetWorthReconciliationView> reconciliation(@RequestParam("year") int year) {
+        return reconciliationUseCase.handle(year);
     }
 
 }

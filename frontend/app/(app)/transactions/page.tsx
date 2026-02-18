@@ -8,6 +8,8 @@ import type { AccountView } from "@/lib/types"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { MonthPicker } from "@/components/month-picker"
+
 
 type TransactionView = {
     id: string
@@ -75,14 +77,10 @@ export default function TransactionsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Month</CardTitle>
-                    <CardDescription>Formato YYYY-MM</CardDescription>
+                    <CardDescription>Select a month and year</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <input
-                        className="w-40 rounded-md border px-3 py-2"
-                        value={month}
-                        onChange={(e) => setMonth(e.target.value)}
-                    />
+                <CardContent className="flex items-center gap-3">
+                    <MonthPicker value={month} onChange={setMonth} />
                 </CardContent>
             </Card>
 

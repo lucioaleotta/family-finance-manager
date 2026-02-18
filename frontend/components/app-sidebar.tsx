@@ -33,7 +33,7 @@ export function AppSidebar() {
                             </SidebarMenuItem>
 
                             <SidebarMenuItem>
-                                <SidebarMenuButton>
+                                <SidebarMenuButton asChild>
                                     <Link href="/transactions">
                                         <ArrowRightLeft className="mr-2 h-4 w-4" />
                                         Transactions
@@ -42,10 +42,13 @@ export function AppSidebar() {
                             </SidebarMenuItem>
 
                             <SidebarMenuItem>
-                                <SidebarMenuButton>
-                                    <Landmark className="mr-2 h-4 w-4" />
-                                    Accounts
+                                <SidebarMenuButton asChild>
+                                    <Link href="/accounts">
+                                        <Landmark className="mr-2 h-4 w-4" />
+                                        Accounts
+                                    </Link>
                                 </SidebarMenuButton>
+
                             </SidebarMenuItem>
 
                             <SidebarMenuItem>

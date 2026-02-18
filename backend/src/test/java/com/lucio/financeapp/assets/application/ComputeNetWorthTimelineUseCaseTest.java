@@ -2,6 +2,7 @@ package com.lucio.financeapp.assets.application;
 
 import com.lucio.financeapp.assets.domain.InvestmentSnapshot;
 import com.lucio.financeapp.assets.domain.ports.InvestmentSnapshotRepository;
+import com.lucio.financeapp.config.FinanceProperties;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.shared.domain.Money;
 import com.lucio.financeapp.transactions.api.AccountBalanceView;
@@ -39,6 +40,9 @@ class ComputeNetWorthTimelineUseCaseTest {
     @Mock
     private InvestmentSnapshotRepository snapshots;
 
+    @Mock
+    private FinanceProperties financeProperties;
+
     @InjectMocks
     private ComputeNetWorthTimelineUseCase useCase;
 
@@ -47,6 +51,8 @@ class ComputeNetWorthTimelineUseCaseTest {
         UUID accountA = UUID.fromString("00000000-0000-0000-0000-000000000001");
         UUID accountB = UUID.fromString("00000000-0000-0000-0000-000000000002");
         UUID chfAccount = UUID.fromString("00000000-0000-0000-0000-000000000003");
+
+        when(financeProperties.getBaseCurrency()).thenReturn(Currency.EUR);
 
         when(listAccounts.handle()).thenReturn(List.of(
                 new AccountView(accountA, "Fineco", AccountType.CHECKING, Currency.EUR),
@@ -70,7 +76,7 @@ class ComputeNetWorthTimelineUseCaseTest {
                     return Optional.empty();
                 });
 
-        var result = useCase.handle(2026, Currency.EUR);
+        var result = useCase.handle(2026);
 
         assertEquals(12, result.size());
 

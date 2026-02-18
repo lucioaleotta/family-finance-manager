@@ -3,6 +3,7 @@ package com.lucio.financeapp.assets.application;
 import com.lucio.financeapp.assets.api.NetWorthMonthlyView;
 import com.lucio.financeapp.assets.domain.InvestmentSnapshot;
 import com.lucio.financeapp.assets.domain.ports.InvestmentSnapshotRepository;
+import com.lucio.financeapp.config.FinanceProperties;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.shared.domain.Money;
 import com.lucio.financeapp.transactions.api.AccountBalanceView;
@@ -50,6 +51,9 @@ class ComputeNetWorthReconciliationUseCaseTest {
     @Mock
     private InvestmentSnapshotRepository snapshots;
 
+    @Mock
+    private FinanceProperties financeProperties;
+
     @InjectMocks
     private ComputeNetWorthReconciliationUseCase useCase;
 
@@ -58,7 +62,9 @@ class ComputeNetWorthReconciliationUseCaseTest {
         YearMonth jan = YearMonth.of(2026, 1);
         YearMonth feb = YearMonth.of(2026, 2);
 
-        when(netWorthTimeline.handle(2026, Currency.EUR)).thenReturn(List.of(
+        when(financeProperties.getBaseCurrency()).thenReturn(Currency.EUR);
+
+        when(netWorthTimeline.handle(2026)).thenReturn(List.of(
                 new NetWorthMonthlyView(jan, Currency.EUR, new BigDecimal("1100.00"), new BigDecimal("100.00"),
                         new BigDecimal("1200.00")),
                 new NetWorthMonthlyView(feb, Currency.EUR, new BigDecimal("1200.00"), new BigDecimal("150.00"),
@@ -86,7 +92,7 @@ class ComputeNetWorthReconciliationUseCaseTest {
                 tx(new BigDecimal("100.00"), TransactionType.INCOME, TransactionKind.STANDARD),
                 tx(new BigDecimal("50.00"), TransactionType.EXPENSE, TransactionKind.STANDARD)));
 
-        var result = useCase.handle(2026, Currency.EUR);
+        var result = useCase.handle(2026);
 
         assertEquals(2, result.size());
 

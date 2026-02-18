@@ -1,11 +1,10 @@
 package com.lucio.financeapp.transactions.domain;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 import java.util.UUID;
-
 import com.lucio.financeapp.shared.domain.Money;
+import java.time.Instant;
 
 @Entity
 @Table(name = "transactions")
@@ -39,6 +38,16 @@ public class Transaction {
     @Column(name = "transfer_id")
     private UUID transferId;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @PrePersist
+    void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
+    }
+
     protected Transaction() {
     }
 
@@ -60,6 +69,9 @@ public class Transaction {
         this.description = description;
         this.kind = kind;
         this.transferId = transferId;
+        this.createdAt = Instant.now();
+    
+
     }
 
     public static Transaction standard(UUID accountId,
@@ -117,6 +129,10 @@ public class Transaction {
 
     public UUID getTransferId() {
         return transferId;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
     public void update(UUID accountId,

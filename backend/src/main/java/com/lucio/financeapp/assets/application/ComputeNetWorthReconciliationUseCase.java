@@ -11,6 +11,7 @@ import com.lucio.financeapp.transactions.application.ListAccountsUseCase;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.transactions.domain.TransactionKind;
 import com.lucio.financeapp.transactions.domain.TransactionType;
+import com.lucio.financeapp.config.FinanceProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,102 +24,107 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ComputeNetWorthReconciliationUseCase {
 
-    private final ComputeNetWorthTimelineUseCase netWorthTimeline;
-    private final TransactionFacade transactionFacade;
+        private final ComputeNetWorthTimelineUseCase netWorthTimeline;
+        private final TransactionFacade transactionFacade;
 
-    // per calcolare net worth del mese precedente (Dec anno-1) senza dipendere da
-    // reporting
-    private final ListAccountsUseCase listAccounts;
-    private final ComputeAccountBalanceUseCase accountBalance;
-    private final InvestmentSnapshotRepository snapshots;
+        // per calcolare net worth del mese precedente (Dec anno-1) senza dipendere da
+        // reporting
+        private final ListAccountsUseCase listAccounts;
+        private final ComputeAccountBalanceUseCase accountBalance;
+        private final InvestmentSnapshotRepository snapshots;
+        private final FinanceProperties financeProperties;
 
-    public ComputeNetWorthReconciliationUseCase(ComputeNetWorthTimelineUseCase netWorthTimeline,
-            TransactionFacade transactionFacade,
-            ListAccountsUseCase listAccounts,
-            ComputeAccountBalanceUseCase accountBalance,
-            InvestmentSnapshotRepository snapshots) {
-        this.netWorthTimeline = netWorthTimeline;
-        this.transactionFacade = transactionFacade;
-        this.listAccounts = listAccounts;
-        this.accountBalance = accountBalance;
-        this.snapshots = snapshots;
-    }
-
-    public List<NetWorthReconciliationView> handle(int year, Currency currency) {
-        List<NetWorthMonthlyView> timeline = netWorthTimeline.handle(year, currency);
-
-        // Net worth del mese precedente (Dec dell'anno prima) per avere delta anche a
-        // Gennaio
-        YearMonth prevMonth = YearMonth.of(year - 1, 12);
-        BigDecimal prevNetWorth = computeNetWorthAt(prevMonth, currency);
-
-        final class NetWorthHolder {
-            BigDecimal value;
-            NetWorthHolder(BigDecimal value) {
-                this.value = value;
-            }
+        public ComputeNetWorthReconciliationUseCase(ComputeNetWorthTimelineUseCase netWorthTimeline,
+                        TransactionFacade transactionFacade,
+                        ListAccountsUseCase listAccounts,
+                        ComputeAccountBalanceUseCase accountBalance,
+                        InvestmentSnapshotRepository snapshots, FinanceProperties financeProperties) {
+                this.netWorthTimeline = netWorthTimeline;
+                this.transactionFacade = transactionFacade;
+                this.listAccounts = listAccounts;
+                this.accountBalance = accountBalance;
+                this.snapshots = snapshots;
+                this.financeProperties = financeProperties;
         }
 
-        NetWorthHolder holder = new NetWorthHolder(prevNetWorth);
+        public List<NetWorthReconciliationView> handle(int year) {
+                Currency currency = financeProperties.getBaseCurrency();
+                List<NetWorthMonthlyView> timeline = netWorthTimeline.handle(year);
 
-        return timeline.stream()
-                .map(current -> {
-                    YearMonth month = current.month();
+                // Net worth del mese precedente (Dec dell'anno prima) per avere delta anche a
+                // Gennaio
+                YearMonth prevMonth = YearMonth.of(year - 1, 12);
+                BigDecimal prevNetWorth = computeNetWorthAt(prevMonth, currency);
 
-                    BigDecimal cashflow = computeCashflow(month); // STANDARD only, same currency assumed
-                    BigDecimal netWorth = current.netWorth();
-                    BigDecimal netWorthDelta = netWorth.subtract(holder.value);
-                    BigDecimal unexplained = netWorthDelta.subtract(cashflow);
+                final class NetWorthHolder {
+                        BigDecimal value;
 
-                    holder.value = netWorth; // advance baseline
+                        NetWorthHolder(BigDecimal value) {
+                                this.value = value;
+                        }
+                }
 
-                    return new NetWorthReconciliationView(
-                            month,
-                            currency,
-                            cashflow,
-                            netWorth,
-                            netWorthDelta,
-                            unexplained);
-                })
-                .toList();
-    }
+                NetWorthHolder holder = new NetWorthHolder(prevNetWorth);
 
-    private BigDecimal computeCashflow(YearMonth month) {
-        List<TransactionView> txs = transactionFacade.findByMonth(month);
+                return timeline.stream()
+                                .map(current -> {
+                                        YearMonth month = current.month();
 
-        // Cashflow = solo STANDARD (esclude TRANSFER)
-        List<TransactionView> standard = txs.stream()
-                .filter(t -> t.kind() == TransactionKind.STANDARD)
-                .toList();
+                                        BigDecimal cashflow = computeCashflow(month); // STANDARD only, same currency
+                                                                                      // assumed
+                                        BigDecimal netWorth = current.netWorth();
+                                        BigDecimal netWorthDelta = netWorth.subtract(holder.value);
+                                        BigDecimal unexplained = netWorthDelta.subtract(cashflow);
 
-        BigDecimal income = standard.stream()
-                .filter(t -> t.type() == TransactionType.INCOME)
-                .map(t -> t.amount().getAmount())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                        holder.value = netWorth; // advance baseline
 
-        BigDecimal expense = standard.stream()
-                .filter(t -> t.type() == TransactionType.EXPENSE)
-                .map(t -> t.amount().getAmount())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                        return new NetWorthReconciliationView(
+                                                        month,
+                                                        currency,
+                                                        cashflow,
+                                                        netWorth,
+                                                        netWorthDelta,
+                                                        unexplained);
+                                })
+                                .toList();
+        }
 
-        return income.subtract(expense);
-    }
+        private BigDecimal computeCashflow(YearMonth month) {
+                List<TransactionView> txs = transactionFacade.findByMonth(month);
 
-    private BigDecimal computeNetWorthAt(YearMonth ym, Currency currency) {
-        LocalDate asOf = ym.atEndOfMonth();
+                // Cashflow = solo STANDARD (esclude TRANSFER)
+                List<TransactionView> standard = txs.stream()
+                                .filter(t -> t.kind() == TransactionKind.STANDARD)
+                                .toList();
 
-        List<AccountView> accounts = listAccounts.handle().stream()
-                .filter(a -> a.currency() == currency)
-                .toList();
+                BigDecimal income = standard.stream()
+                                .filter(t -> t.type() == TransactionType.INCOME)
+                                .map(t -> t.amount().getAmount())
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal liquidity = accounts.stream()
-                .map(a -> accountBalance.handle(a.id(), asOf).balance())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal expense = standard.stream()
+                                .filter(t -> t.type() == TransactionType.EXPENSE)
+                                .map(t -> t.amount().getAmount())
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal invested = snapshots.findByMonthAndCurrency(ym, currency)
-                .map(s -> s.getTotalInvested().getAmount())
-                .orElse(BigDecimal.ZERO);
+                return income.subtract(expense);
+        }
 
-        return liquidity.add(invested);
-    }
+        private BigDecimal computeNetWorthAt(YearMonth ym, Currency currency) {
+                LocalDate asOf = ym.atEndOfMonth();
+
+                List<AccountView> accounts = listAccounts.handle().stream()
+                                .filter(a -> a.currency() == currency)
+                                .toList();
+
+                BigDecimal liquidity = accounts.stream()
+                                .map(a -> accountBalance.handle(a.id(), asOf).balance())
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal invested = snapshots.findByMonthAndCurrency(ym, currency)
+                                .map(s -> s.getTotalInvested().getAmount())
+                                .orElse(BigDecimal.ZERO);
+
+                return liquidity.add(invested);
+        }
 }

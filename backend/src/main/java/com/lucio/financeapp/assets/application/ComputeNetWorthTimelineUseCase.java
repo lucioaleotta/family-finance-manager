@@ -6,6 +6,7 @@ import com.lucio.financeapp.transactions.api.AccountView;
 import com.lucio.financeapp.transactions.application.ListAccountsUseCase;
 import com.lucio.financeapp.transactions.application.ComputeAccountBalanceUseCase;
 import com.lucio.financeapp.shared.domain.Currency;
+import com.lucio.financeapp.config.FinanceProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,40 +19,43 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ComputeNetWorthTimelineUseCase {
 
-    private final ListAccountsUseCase listAccounts;
-    private final ComputeAccountBalanceUseCase accountBalance;
-    private final InvestmentSnapshotRepository snapshots;
+        private final ListAccountsUseCase listAccounts;
+        private final ComputeAccountBalanceUseCase accountBalance;
+        private final InvestmentSnapshotRepository snapshots;
+        private final FinanceProperties financeProperties;
 
-    public ComputeNetWorthTimelineUseCase(ListAccountsUseCase listAccounts,
-            ComputeAccountBalanceUseCase accountBalance,
-            InvestmentSnapshotRepository snapshots) {
-        this.listAccounts = listAccounts;
-        this.accountBalance = accountBalance;
-        this.snapshots = snapshots;
-    }
+        public ComputeNetWorthTimelineUseCase(ListAccountsUseCase listAccounts,
+                        ComputeAccountBalanceUseCase accountBalance,
+                        InvestmentSnapshotRepository snapshots, FinanceProperties financeProperties) {
+                this.listAccounts = listAccounts;
+                this.accountBalance = accountBalance;
+                this.snapshots = snapshots;
+                this.financeProperties = financeProperties;
+        }
 
-    public List<NetWorthMonthlyView> handle(int year, Currency currency) {
-        List<AccountView> accounts = listAccounts.handle().stream()
-                .filter(a -> a.currency() == currency)
-                .toList();
+        public List<NetWorthMonthlyView> handle(int year) {
+                Currency currency = financeProperties.getBaseCurrency();
+                List<AccountView> accounts = listAccounts.handle().stream()
+                                .filter(a -> a.currency() == currency)
+                                .toList();
 
-        return java.util.stream.IntStream.rangeClosed(1, 12)
-                .mapToObj(m -> {
-                    YearMonth ym = YearMonth.of(year, m);
-                    LocalDate asOf = ym.atEndOfMonth();
+                return java.util.stream.IntStream.rangeClosed(1, 12)
+                                .mapToObj(m -> {
+                                        YearMonth ym = YearMonth.of(year, m);
+                                        LocalDate asOf = ym.atEndOfMonth();
 
-                    BigDecimal liquidity = accounts.stream()
-                            .map(a -> accountBalance.handle(a.id(), asOf).balance())
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                                        BigDecimal liquidity = accounts.stream()
+                                                        .map(a -> accountBalance.handle(a.id(), asOf).balance())
+                                                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                    BigDecimal invested = snapshots.findByMonthAndCurrency(ym, currency)
-                            .map(s -> s.getTotalInvested().getAmount())
-                            .orElse(BigDecimal.ZERO);
+                                        BigDecimal invested = snapshots.findByMonthAndCurrency(ym, currency)
+                                                        .map(s -> s.getTotalInvested().getAmount())
+                                                        .orElse(BigDecimal.ZERO);
 
-                    BigDecimal netWorth = liquidity.add(invested);
+                                        BigDecimal netWorth = liquidity.add(invested);
 
-                    return new NetWorthMonthlyView(ym, currency, liquidity, invested, netWorth);
-                })
-                .toList();
-    }
+                                        return new NetWorthMonthlyView(ym, currency, liquidity, invested, netWorth);
+                                })
+                                .toList();
+        }
 }
