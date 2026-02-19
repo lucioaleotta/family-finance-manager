@@ -19,8 +19,16 @@ function currentYM() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
-function fmtAmount(value: number) {
+function fmtInputAmount(value: number) {
     return value.toFixed(2)
+}
+
+function fmtDisplayAmount(value: number) {
+    return new Intl.NumberFormat("it-IT", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        useGrouping: true,
+    }).format(value)
 }
 
 export default function InvestmentsPage() {
@@ -46,7 +54,7 @@ export default function InvestmentsPage() {
             if (shouldPrefill) {
                 const current = data.find((s) => s.month === month)
                 if (current) {
-                    setAmount(fmtAmount(current.totalInvested))
+                    setAmount(fmtInputAmount(current.totalInvested))
                     setNote(current.note ?? "")
                 } else {
                     setAmount("")
@@ -145,20 +153,22 @@ export default function InvestmentsPage() {
                         <p>Loading...</p>
                     ) : (
                         <div className="space-y-2">
-                            {snapshots.map((s) => (
-                                <div
-                                    key={s.month}
-                                    className="flex flex-col gap-1 border-b py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
-                                >
-                                    <span className="font-medium">{s.month}</span>
-                                    <span className="sm:text-right">
-                                        {s.currency} {fmtAmount(s.totalInvested)}
-                                        {s.note ? (
-                                            <span className="block text-xs text-slate-500">{s.note}</span>
-                                        ) : null}
-                                    </span>
-                                </div>
-                            ))}
+                            {[...snapshots]
+                                .sort((a, b) => b.month.localeCompare(a.month))
+                                .map((s) => (
+                                    <div
+                                        key={s.month}
+                                        className="flex flex-col gap-1 border-b py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+                                    >
+                                        <span className="font-medium">{s.month}</span>
+                                        <span className="sm:text-right">
+                                            {s.currency} {fmtDisplayAmount(s.totalInvested)}
+                                            {s.note ? (
+                                                <span className="block text-xs text-slate-500">{s.note}</span>
+                                            ) : null}
+                                        </span>
+                                    </div>
+                                ))}
                         </div>
                     )}
                 </CardContent>

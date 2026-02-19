@@ -10,7 +10,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 export async function apiPost<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify(body),
   })
   if (!res.ok) {

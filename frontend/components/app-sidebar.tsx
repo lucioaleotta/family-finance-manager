@@ -36,7 +36,7 @@ export function AppSidebar() {
                                 <SidebarMenuButton asChild>
                                     <Link href="/transactions" className="flex items-center">
                                         <ArrowRightLeft className="mr-2 h-4 w-4" />
-                                        Transactions
+                                        Transazioni
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -45,7 +45,7 @@ export function AppSidebar() {
                                 <SidebarMenuButton asChild>
                                     <Link href="/accounts" className="flex items-center">
                                         <Landmark className="mr-2 h-4 w-4" />
-                                        Accounts
+                                        Conti
                                     </Link>
                                 </SidebarMenuButton>
 
@@ -55,7 +55,7 @@ export function AppSidebar() {
                                 <SidebarMenuButton asChild>
                                     <Link href="/investments" className="flex items-center">
                                         <TrendingUp className="mr-2 h-4 w-4" />
-                                        Investments
+                                        Investimenti
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

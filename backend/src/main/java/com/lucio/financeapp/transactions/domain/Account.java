@@ -52,4 +52,10 @@ public class Account {
     public Currency getCurrency() {
         return currency;
     }
+
+    public void update(String name, AccountType type, Currency currency) {
+        this.name = name;
+        this.type = type;
+        this.currency = currency;
+    }
 }
