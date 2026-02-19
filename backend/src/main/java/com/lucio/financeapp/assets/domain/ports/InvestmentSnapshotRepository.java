@@ -13,4 +13,8 @@ public interface InvestmentSnapshotRepository {
     Optional<InvestmentSnapshot> findByMonthAndCurrency(YearMonth month, Currency currency);
 
     List<InvestmentSnapshot> findByYearAndCurrency(int year, Currency currency);
+
+    List<InvestmentSnapshot> findByMonthBetween(YearMonth start, YearMonth end, Currency currency);
+
+    List<InvestmentSnapshot> findByMonthBetween(YearMonth start, YearMonth end);
 }

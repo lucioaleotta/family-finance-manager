@@ -1,6 +1,9 @@
 package com.lucio.financeapp.assets.infrastructure.web;
 
 import com.lucio.financeapp.assets.application.UpsertInvestmentSnapshotUseCase;
+import com.lucio.financeapp.assets.application.ListLastInvestmentSnapshotsUseCase;
+import com.lucio.financeapp.assets.api.InvestmentSnapshotView;
+import com.lucio.financeapp.config.FinanceProperties;
 import com.lucio.financeapp.shared.domain.Currency;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -16,9 +19,15 @@ import java.time.YearMonth;
 public class InvestmentSnapshotController {
 
     private final UpsertInvestmentSnapshotUseCase useCase;
+    private final ListLastInvestmentSnapshotsUseCase listLastUseCase;
+    private final FinanceProperties financeProperties;
 
-    public InvestmentSnapshotController(UpsertInvestmentSnapshotUseCase useCase) {
+    public InvestmentSnapshotController(UpsertInvestmentSnapshotUseCase useCase,
+            ListLastInvestmentSnapshotsUseCase listLastUseCase,
+            FinanceProperties financeProperties) {
         this.useCase = useCase;
+        this.listLastUseCase = listLastUseCase;
+        this.financeProperties = financeProperties;
     }
 
     @PutMapping("/snapshots")
@@ -29,6 +38,15 @@ public class InvestmentSnapshotController {
                 request.totalInvested(),
                 request.currency(),
                 request.note()));
+    }
+
+    @GetMapping("/snapshots/last-12")
+    public java.util.List<InvestmentSnapshotView> last12(
+            @RequestParam(value = "month", required = false) String month,
+            @RequestParam(value = "currency", required = false) Currency currency) {
+        YearMonth endMonth = month == null ? null : YearMonth.parse(month);
+        Currency targetCurrency = currency == null ? financeProperties.getBaseCurrency() : currency;
+        return listLastUseCase.handle(endMonth, targetCurrency);
     }
 
     record UpsertRequest(

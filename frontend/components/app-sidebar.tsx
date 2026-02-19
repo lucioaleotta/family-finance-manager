@@ -24,8 +24,8 @@ export function AppSidebar() {
                         <SidebarMenu>
 
                             <SidebarMenuItem>
-                                <SidebarMenuButton>
-                                    <Link href="/dashboard">
+                                <SidebarMenuButton asChild>
+                                    <Link href="/dashboard" className="flex items-center">
                                         <LayoutDashboard className="mr-2 h-4 w-4" />
                                         Dashboard
                                     </Link>
@@ -34,7 +34,7 @@ export function AppSidebar() {
 
                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild>
-                                    <Link href="/transactions">
+                                    <Link href="/transactions" className="flex items-center">
                                         <ArrowRightLeft className="mr-2 h-4 w-4" />
                                         Transactions
                                     </Link>
@@ -43,7 +43,7 @@ export function AppSidebar() {
 
                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild>
-                                    <Link href="/accounts">
+                                    <Link href="/accounts" className="flex items-center">
                                         <Landmark className="mr-2 h-4 w-4" />
                                         Accounts
                                     </Link>
@@ -52,9 +52,11 @@ export function AppSidebar() {
                             </SidebarMenuItem>
 
                             <SidebarMenuItem>
-                                <SidebarMenuButton>
-                                    <TrendingUp className="mr-2 h-4 w-4" />
-                                    Net Worth
+                                <SidebarMenuButton asChild>
+                                    <Link href="/investments" className="flex items-center">
+                                        <TrendingUp className="mr-2 h-4 w-4" />
+                                        Investments
+                                    </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
 

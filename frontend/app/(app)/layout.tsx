@@ -1,5 +1,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
+import { AuthGuard } from "@/components/auth-guard"
+import { AppHeader } from "@/components/app-header"
 
 export default function AppLayout({
   children,
@@ -8,13 +10,22 @@ export default function AppLayout({
 }) {
   return (
     <SidebarProvider>
-      <div className="flex h-screen">
-        <AppSidebar />
+      <AuthGuard>
+        <div className="flex h-screen">
 
-        <main className="flex-1 overflow-auto p-8 bg-slate-50">
-          {children}
-        </main>
-      </div>
+          <AppSidebar />
+
+          <div className="flex flex-col flex-1">
+
+            <AppHeader />
+
+            <main className="flex-1 overflow-auto p-8 bg-slate-50">
+              {children}
+            </main>
+
+          </div>
+        </div>
+      </AuthGuard>
     </SidebarProvider>
   )
 }

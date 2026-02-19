@@ -1,243 +1,281 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+
+set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-BACKEND_DIR="$ROOT_DIR/backend"
-FRONTEND_DIR="$ROOT_DIR/frontend"
-COMPOSE_FILE="$BACKEND_DIR/docker/postgres.yml"
-RUN_DIR="$BACKEND_DIR/.run"
-LOG_DIR="$BACKEND_DIR/logs"
-BACKEND_PID_FILE="$RUN_DIR/backend.pid"
-FRONTEND_PID_FILE="$RUN_DIR/frontend.pid"
-BACKEND_LOG="$LOG_DIR/backend.log"
-FRONTEND_LOG="$LOG_DIR/frontend.log"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+BACKEND_DIR="$PROJECT_ROOT/backend"
+FRONTEND_DIR="$PROJECT_ROOT/frontend"
+DOCKER_DIR="$PROJECT_ROOT/backend/docker"
 
-mkdir -p "$RUN_DIR" "$LOG_DIR"
+# Colori per output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-is_backend_running() {
-  if [[ -f "$BACKEND_PID_FILE" ]]; then
-    local pid
-    pid="$(cat "$BACKEND_PID_FILE")"
-    if kill -0 "$pid" 2>/dev/null; then
-      return 0
-    fi
-  fi
-  return 1
+# Funzioni di utilità
+log_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
 }
 
-is_frontend_running() {
-  if [[ -f "$FRONTEND_PID_FILE" ]]; then
-    local pid
-    pid="$(cat "$FRONTEND_PID_FILE")"
-    if kill -0 "$pid" 2>/dev/null; then
-      return 0
-    fi
-  fi
-  return 1
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
-backend_up() {
-  if is_backend_running; then
-    echo "Spring Boot già avviato (PID $(cat "$BACKEND_PID_FILE"))."
-    return
-  fi
-
-  echo "Avvio Spring Boot..."
-  (
-    cd "$BACKEND_DIR"
-    nohup mvn spring-boot:run > "$BACKEND_LOG" 2>&1 &
-    echo $! > "$BACKEND_PID_FILE"
-  )
-  echo "Spring Boot avviato (PID $(cat "$BACKEND_PID_FILE"))."
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
-backend_down() {
-  if ! [[ -f "$BACKEND_PID_FILE" ]]; then
-    echo "Nessun PID file trovato per Spring Boot."
-    return
-  fi
+# Funzione per mostrare l'help
+show_help() {
+    cat << EOF
+Family Finance Manager - Development Script
 
-  local pid
-  pid="$(cat "$BACKEND_PID_FILE")"
+Usage: ./dev.sh [COMMAND] [OPTIONS]
 
-  if kill -0 "$pid" 2>/dev/null; then
-    echo "Stop Spring Boot (PID $pid)..."
-    kill "$pid"
-    sleep 1
-    if kill -0 "$pid" 2>/dev/null; then
-      echo "Processo backend ancora attivo, invio SIGKILL..."
-      kill -9 "$pid" || true
-    fi
-    echo "Spring Boot fermato."
-  else
-    echo "PID backend $pid non attivo."
-  fi
+Commands:
+  up                Start all services (database, backend, frontend)
+  down              Stop all services
+  restart           Restart all services
+  status            Show status of all services
+  logs              Show logs from all services
+  
+  db-start          Start database only
+  db-stop           Stop database only
+  db-restart        Restart database only
+  db-logs           Show database logs
+  
+  backend-start     Start backend only
+  backend-stop      Stop backend only
+  backend-restart   Restart backend only
+  backend-logs      Show backend logs
+  backend-build     Build backend (compile + skip tests)
+  
+  frontend-start    Start frontend only
+  frontend-stop     Stop frontend only
+  frontend-restart  Restart frontend only
+  frontend-logs     Show frontend logs
+  
+  help              Show this help message
 
-  rm -f "$BACKEND_PID_FILE"
-}
-
-frontend_up() {
-  if ! [[ -d "$FRONTEND_DIR" ]]; then
-    echo "Frontend non trovato in $FRONTEND_DIR (skip)."
-    return
-  fi
-
-  if is_frontend_running; then
-    echo "Frontend già avviato (PID $(cat "$FRONTEND_PID_FILE"))."
-    return
-  fi
-
-  if ! command -v npm >/dev/null 2>&1; then
-    echo "Errore: npm non disponibile, impossibile avviare il frontend."
-    return
-  fi
-
-  echo "Avvio Frontend (Next.js)..."
-  (
-    cd "$FRONTEND_DIR"
-    nohup npm run dev > "$FRONTEND_LOG" 2>&1 &
-    echo $! > "$FRONTEND_PID_FILE"
-  )
-  echo "Frontend avviato (PID $(cat "$FRONTEND_PID_FILE"))."
-}
-
-frontend_down() {
-  if ! [[ -f "$FRONTEND_PID_FILE" ]]; then
-    echo "Nessun PID file trovato per Frontend."
-    return
-  fi
-
-  local pid
-  pid="$(cat "$FRONTEND_PID_FILE")"
-
-  if kill -0 "$pid" 2>/dev/null; then
-    echo "Stop Frontend (PID $pid)..."
-    kill "$pid"
-    sleep 1
-    if kill -0 "$pid" 2>/dev/null; then
-      echo "Processo frontend ancora attivo, invio SIGKILL..."
-      kill -9 "$pid" || true
-    fi
-    echo "Frontend fermato."
-  else
-    echo "PID frontend $pid non attivo."
-  fi
-
-  rm -f "$FRONTEND_PID_FILE"
-}
-
-db_up() {
-  echo "Avvio PostgreSQL Docker..."
-  docker compose -f "$COMPOSE_FILE" up -d
-}
-
-db_down() {
-  echo "Stop PostgreSQL Docker..."
-  docker compose -f "$COMPOSE_FILE" down
-}
-
-show_status() {
-  echo "=== Spring Boot ==="
-  if is_backend_running; then
-    echo "RUNNING (PID $(cat "$BACKEND_PID_FILE"))"
-  else
-    echo "STOPPED"
-  fi
-
-  echo
-  echo "=== Frontend (Next.js) ==="
-  if is_frontend_running; then
-    echo "RUNNING (PID $(cat "$FRONTEND_PID_FILE"))"
-  else
-    echo "STOPPED"
-  fi
-
-  echo
-  echo "=== Porta 8080 ==="
-  lsof -nP -iTCP:8080 -sTCP:LISTEN || true
-
-  echo
-  echo "=== Porta 3000 ==="
-  lsof -nP -iTCP:3000 -sTCP:LISTEN || true
-
-  echo
-  echo "=== Docker PostgreSQL ==="
-  docker compose -f "$COMPOSE_FILE" ps
-}
-
-show_logs() {
-  local target="${1:-app}"
-
-  case "$target" in
-    app|backend)
-      echo "Log backend: $BACKEND_LOG"
-      touch "$BACKEND_LOG"
-      tail -f "$BACKEND_LOG"
-      ;;
-    fe|frontend)
-      echo "Log frontend: $FRONTEND_LOG"
-      touch "$FRONTEND_LOG"
-      tail -f "$FRONTEND_LOG"
-      ;;
-    db|postgres)
-      docker compose -f "$COMPOSE_FILE" logs -f postgres
-      ;;
-    all)
-      echo "Usa tre terminali:"
-      echo "  ./scripts/dev.sh logs app"
-      echo "  ./scripts/dev.sh logs fe"
-      echo "  ./scripts/dev.sh logs db"
-      ;;
-    *)
-      echo "Target log non valido: $target"
-      echo "Valori supportati: app | fe | db | all"
-      exit 1
-      ;;
-  esac
-}
-
-usage() {
-  cat <<EOF
-Uso: ./scripts/dev.sh <comando>
-
-Comandi:
-  up             Avvia PostgreSQL + Spring Boot + Frontend
-  down           Ferma Frontend + Spring Boot + PostgreSQL
-  status         Stato backend/frontend, porte 8080/3000 e container
-  logs [target]  Log runtime (target: app | fe | db | all)
-
-Esempi:
-  ./scripts/dev.sh up
-  ./scripts/dev.sh status
-  ./scripts/dev.sh logs app
-  ./scripts/dev.sh logs fe
-  ./scripts/dev.sh logs db
-  ./scripts/dev.sh down
+Examples:
+  ./dev.sh up                    # Start all services
+  ./dev.sh db-restart            # Restart only database
+  ./dev.sh backend-build         # Build backend
+  ./dev.sh frontend-logs         # Show frontend logs
 EOF
 }
 
-command="${1:-}"
+# Database functions
+start_database() {
+    log_info "Starting database..."
+    cd "$DOCKER_DIR"
+    docker-compose -f postgres.yml up -d
+    sleep 3
+    log_info "Database started ✓"
+}
 
-case "$command" in
-  up)
-    db_up
-    backend_up
-    frontend_up
-    ;;
-  down)
-    frontend_down
-    backend_down
-    db_down
-    ;;
-  status)
+stop_database() {
+    log_info "Stopping database..."
+    cd "$DOCKER_DIR"
+    docker-compose -f postgres.yml down
+    log_info "Database stopped ✓"
+}
+
+restart_database() {
+    stop_database
+    sleep 2
+    start_database
+}
+
+db_logs() {
+    cd "$DOCKER_DIR"
+    docker-compose -f postgres.yml logs -f
+}
+
+# Backend functions
+start_backend() {
+    log_info "Starting backend..."
+    cd "$BACKEND_DIR"
+    mvn spring-boot:run -DskipTests > /dev/null 2>&1 &
+    sleep 10
+    log_info "Backend started on http://localhost:8080 ✓"
+}
+
+stop_backend() {
+    log_info "Stopping backend..."
+    pkill -f "spring-boot:run" || true
+    log_info "Backend stopped ✓"
+}
+
+restart_backend() {
+    stop_backend
+    sleep 2
+    start_backend
+}
+
+build_backend() {
+    log_info "Building backend..."
+    cd "$BACKEND_DIR"
+    mvn clean compile -DskipTests
+    log_info "Backend built ✓"
+}
+
+backend_logs() {
+    cd "$BACKEND_DIR"
+    tail -f logs/backend.log 2>/dev/null || log_warn "Log file not found"
+}
+
+# Frontend functions
+start_frontend() {
+    log_info "Starting frontend..."
+    cd "$FRONTEND_DIR"
+    npm run dev > /dev/null 2>&1 &
+    sleep 5
+    log_info "Frontend started on http://localhost:3000 ✓"
+}
+
+stop_frontend() {
+    log_info "Stopping frontend..."
+    pkill -f "next dev" || true
+    log_info "Frontend stopped ✓"
+}
+
+restart_frontend() {
+    stop_frontend
+    sleep 2
+    start_frontend
+}
+
+frontend_logs() {
+    cd "$FRONTEND_DIR"
+    tail -f .next/debug.log 2>/dev/null || log_warn "Log file not found"
+}
+
+# Combined functions
+start_all() {
+    log_info "Starting all services..."
+    start_database
+    start_backend
+    start_frontend
+    log_info "All services started ✓"
     show_status
-    ;;
-  logs)
-    show_logs "${2:-app}"
-    ;;
-  *)
-    usage
-    exit 1
-    ;;
+}
+
+stop_all() {
+    log_info "Stopping all services..."
+    stop_frontend
+    stop_backend
+    stop_database
+    log_info "All services stopped ✓"
+}
+
+restart_all() {
+    stop_all
+    sleep 2
+    start_all
+}
+
+show_status() {
+    echo -e "\n${YELLOW}=== Service Status ===${NC}"
+    
+    # Database
+    cd "$DOCKER_DIR"
+    if docker-compose -f postgres.yml ps 2>/dev/null | grep -q "Up"; then
+        echo -e "Database:  ${GREEN}✓ Running${NC}"
+    else
+        echo -e "Database:  ${RED}✗ Stopped${NC}"
+    fi
+    
+    # Backend
+    if pgrep -f "spring-boot:run" > /dev/null 2>&1; then
+        echo -e "Backend:   ${GREEN}✓ Running${NC} (http://localhost:8080)"
+    else
+        echo -e "Backend:   ${RED}✗ Stopped${NC}"
+    fi
+    
+    # Frontend
+    if pgrep -f "next dev" > /dev/null 2>&1; then
+        echo -e "Frontend:  ${GREEN}✓ Running${NC} (http://localhost:3000)"
+    else
+        echo -e "Frontend:  ${RED}✗ Stopped${NC}"
+    fi
+    echo ""
+}
+
+show_all_logs() {
+    log_info "Showing logs (press Ctrl+C to exit)..."
+    log_warn "Use individual commands for detailed logs:"
+    echo "  ./dev.sh db-logs"
+    echo "  ./dev.sh backend-logs"
+    echo "  ./dev.sh frontend-logs"
+}
+
+# Main logic
+COMMAND="${1:-help}"
+
+case "$COMMAND" in
+    up)
+        start_all
+        ;;
+    down)
+        stop_all
+        ;;
+    restart)
+        restart_all
+        ;;
+    status)
+        show_status
+        ;;
+    logs)
+        show_all_logs
+        ;;
+    db-start)
+        start_database
+        ;;
+    db-stop)
+        stop_database
+        ;;
+    db-restart)
+        restart_database
+        ;;
+    db-logs)
+        db_logs
+        ;;
+    backend-start)
+        start_backend
+        ;;
+    backend-stop)
+        stop_backend
+        ;;
+    backend-restart)
+        restart_backend
+        ;;
+    backend-logs)
+        backend_logs
+        ;;
+    backend-build)
+        build_backend
+        ;;
+    frontend-start)
+        start_frontend
+        ;;
+    frontend-stop)
+        stop_frontend
+        ;;
+    frontend-restart)
+        restart_frontend
+        ;;
+    frontend-logs)
+        frontend_logs
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        log_error "Unknown command: $COMMAND"
+        show_help
+        exit 1
+        ;;
 esac

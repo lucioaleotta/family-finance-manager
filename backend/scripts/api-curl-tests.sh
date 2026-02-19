@@ -8,6 +8,12 @@ TIMESTAMP="$(date +%s)"
 ACCOUNT_NAME_FROM="${ACCOUNT_NAME_FROM:-Fineco-${TIMESTAMP}}"
 ACCOUNT_NAME_TO="${ACCOUNT_NAME_TO:-N26-${TIMESTAMP}}"
 TRANSFER_AMOUNT="${TRANSFER_AMOUNT:-10.00}"
+REGISTER_USERNAME="${REGISTER_USERNAME:-user-${TIMESTAMP}}"
+REGISTER_PASSWORD="${REGISTER_PASSWORD:-Test1234}"
+REGISTER_BASE_CURRENCY="${REGISTER_BASE_CURRENCY:-EUR}"
+INVEST_CURRENCY="${INVEST_CURRENCY:-EUR}"
+INVEST_TOTAL="${INVEST_TOTAL:-15000.00}"
+INVEST_NOTE="${INVEST_NOTE:-PAC mese test}"
 CLEANUP="${CLEANUP:-false}"
 ASSERTS="${ASSERTS:-true}"
 
@@ -105,8 +111,23 @@ echo "YEAR=$YEAR"
 echo "ACCOUNT_NAME_FROM=$ACCOUNT_NAME_FROM"
 echo "ACCOUNT_NAME_TO=$ACCOUNT_NAME_TO"
 echo "TRANSFER_AMOUNT=$TRANSFER_AMOUNT"
+echo "REGISTER_USERNAME=$REGISTER_USERNAME"
+echo "REGISTER_BASE_CURRENCY=$REGISTER_BASE_CURRENCY"
+echo "INVEST_CURRENCY=$INVEST_CURRENCY"
+echo "INVEST_TOTAL=$INVEST_TOTAL"
 echo "CLEANUP=$CLEANUP"
 echo "ASSERTS=$ASSERTS"
+echo
+
+echo "[0] Register user"
+REGISTER_RESPONSE=$(curl -sS -X POST "$BASE_URL/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"$REGISTER_USERNAME\",\"password\":\"$REGISTER_PASSWORD\",\"baseCurrency\":\"$REGISTER_BASE_CURRENCY\"}" \
+  -w "\n%{http_code}")
+
+split_body_status "$REGISTER_RESPONSE"
+require_http_status "200"
+echo "User registered: $REGISTER_USERNAME"
 echo
 
 echo "[1] Create source account"
@@ -241,7 +262,37 @@ assert types == ["EXPENSE", "INCOME"]
 fi
 echo
 
-echo "[8] Reporting monthly"
+echo "[8] Upsert investment snapshot"
+INVEST_UPSERT_STATUS=$(curl -sS -X PUT "$BASE_URL/api/assets/investments/snapshots" \
+  -H "Content-Type: application/json" \
+  -d "{\"month\":\"$MONTH\",\"totalInvested\":$INVEST_TOTAL,\"currency\":\"$INVEST_CURRENCY\",\"note\":\"$INVEST_NOTE\"}" \
+  -o /dev/null -w "%{http_code}")
+
+if [[ "$INVEST_UPSERT_STATUS" != "204" ]]; then
+  echo "Errore upsert investimento: HTTP $INVEST_UPSERT_STATUS"
+  exit 1
+fi
+echo "HTTP $INVEST_UPSERT_STATUS"
+echo
+
+echo "[9] List investments last 12 months"
+INVEST_LIST_JSON="$(fetch_json "$BASE_URL/api/assets/investments/snapshots/last-12?month=$MONTH&currency=$INVEST_CURRENCY")"
+printf '%s\n' "$INVEST_LIST_JSON" | pretty
+if is_true "$ASSERTS"; then
+  assert_python_json "lista ultimi 12 mesi coerente" "$INVEST_LIST_JSON" '
+assert isinstance(data, list)
+assert len(data) == 12
+assert data[-1].get("month") == "'"$MONTH"'"
+target = next((item for item in data if item.get("month") == "'"$MONTH"'"), None)
+assert target is not None
+assert target.get("currency") == "'"$INVEST_CURRENCY"'"
+assert round(float(target.get("totalInvested", 0)), 2) == round(float("'"$INVEST_TOTAL"'"), 2)
+assert target.get("note") == "'"$INVEST_NOTE"'"
+'
+fi
+echo
+
+echo "[10] Reporting monthly"
 REPORT_MONTHLY_JSON="$(fetch_json "$BASE_URL/api/reporting/monthly?month=$MONTH")"
 printf '%s\n' "$REPORT_MONTHLY_JSON" | pretty
 if is_true "$ASSERTS"; then
@@ -255,7 +306,7 @@ assert round(income - expense, 2) == round(savings, 2)
 fi
 echo
 
-echo "[9] Reporting annual timeline"
+echo "[11] Reporting annual timeline"
 REPORT_TIMELINE_JSON="$(fetch_json "$BASE_URL/api/reporting/annual/timeline?year=$YEAR")"
 printf '%s\n' "$REPORT_TIMELINE_JSON" | pretty
 if is_true "$ASSERTS"; then
@@ -268,7 +319,7 @@ assert all(str(m).startswith("'"$YEAR"'-") for m in months)
 fi
 echo
 
-echo "[10] Reporting annual total"
+echo "[12] Reporting annual total"
 REPORT_ANNUAL_JSON="$(fetch_json "$BASE_URL/api/reporting/annual/total?year=$YEAR")"
 printf '%s\n' "$REPORT_ANNUAL_JSON" | pretty
 if is_true "$ASSERTS"; then
@@ -282,7 +333,7 @@ assert round(income - expense, 2) == round(result, 2)
 fi
 echo
 
-echo "[11] Optional cleanup"
+echo "[13] Optional cleanup"
 CLEANUP_NORMALIZED="$(printf '%s' "$CLEANUP" | tr '[:upper:]' '[:lower:]')"
 if [[ "$CLEANUP_NORMALIZED" == "true" ]]; then
   IDS_TO_DELETE=("$TRANSACTION_ID")
@@ -331,7 +382,7 @@ else
 fi
 echo
 
-echo "[12] Final list transactions by month"
+echo "[14] Final list transactions by month"
 TX_FINAL_JSON="$(fetch_json "$BASE_URL/api/transactions?month=$MONTH")"
 printf '%s\n' "$TX_FINAL_JSON" | pretty
 if is_true "$ASSERTS"; then
