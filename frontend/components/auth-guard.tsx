@@ -5,18 +5,23 @@ import { useRouter } from "next/navigation"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter()
-    const [isAuthenticated] = useState(() => {
-        if (typeof window === "undefined") {
-            return false
-        }
-        return Boolean(localStorage.getItem("auth_basic"))
-    })
+    const [mounted, setMounted] = useState(false)
+    const [isAuthenticated, setIsAuthenticated] = useState(false)
 
     useEffect(() => {
-        if (!isAuthenticated) {
+        setMounted(true)
+        const hasAuth = Boolean(localStorage.getItem("auth_basic"))
+        setIsAuthenticated(hasAuth)
+        
+        if (!hasAuth) {
             router.replace("/login")
         }
-    }, [isAuthenticated, router])
+    }, [router])
+
+    // Durante SSR e primo render, non renderizzare nulla per evitare hydration mismatch
+    if (!mounted) {
+        return null
+    }
 
     if (!isAuthenticated) {
         return null
