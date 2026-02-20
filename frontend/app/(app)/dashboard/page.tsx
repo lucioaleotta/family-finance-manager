@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { apiGet } from "@/lib/api"
+import type { AssetsOverviewView } from "@/lib/types"
+import { formatAmount } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { AssetsAnnualChart } from "@/components/assets-annual-chart"
