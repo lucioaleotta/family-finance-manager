@@ -1,11 +1,28 @@
 "use client"
 
+import * as React from "react"
 import { useRouter } from "next/navigation"
+import { User, LogOut } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
 
 export function AppHeader() {
 
     const router = useRouter()
+    const [username, setUsername] = React.useState<string | null>(null)
+
+    React.useEffect(() => {
+        const token = localStorage.getItem("auth_basic")
+        if (token) {
+            try {
+                const decoded = atob(token)
+                const [user] = decoded.split(":")
+                setUsername(user)
+            } catch {
+                setUsername(null)
+            }
+        }
+    }, [])
 
     function logout() {
         localStorage.removeItem("auth_basic")
@@ -22,12 +39,22 @@ export function AppHeader() {
                 </div>
             </div>
 
-            <button
-                onClick={logout}
-                className="text-sm text-red-600 hover:underline"
-            >
-                Logout
-            </button>
+            <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <User className="h-4 w-4" />
+                    <span>Ciao {username || "Leot"}</span>
+                </div>
+
+                <Button
+                    onClick={logout}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                >
+                    <LogOut className="h-4 w-4" />
+                    <span>logout</span>
+                </Button>
+            </div>
 
         </header>
     )
