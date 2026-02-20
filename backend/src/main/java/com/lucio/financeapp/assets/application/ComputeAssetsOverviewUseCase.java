@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,10 +57,13 @@ public class ComputeAssetsOverviewUseCase {
         List<AccountView> accounts = listAccounts.handle();
         List<InvestmentSnapshot> snapshotList = snapshots.findByMonthBetween(start, end);
 
-        Map<YearMonth, List<InvestmentSnapshot>> snapshotByMonth = new HashMap<>();
+        Map<Currency, List<InvestmentSnapshot>> snapshotsByCurrency = new HashMap<>();
         for (InvestmentSnapshot snapshot : snapshotList) {
-            snapshotByMonth.computeIfAbsent(snapshot.getMonth(), key -> new ArrayList<>()).add(snapshot);
+            Currency currency = snapshot.getTotalInvested().getCurrency();
+            snapshotsByCurrency.computeIfAbsent(currency, key -> new ArrayList<>()).add(snapshot);
         }
+
+        snapshotsByCurrency.values().forEach(list -> list.sort(Comparator.comparing(InvestmentSnapshot::getMonth)));
 
         Set<Currency> currencies = new HashSet<>();
         accounts.forEach(a -> currencies.add(a.currency()));
@@ -74,6 +78,8 @@ public class ComputeAssetsOverviewUseCase {
 
         List<AssetsMonthlyView> monthly = new ArrayList<>(12);
         YearMonth current = start;
+        Map<Currency, BigDecimal> latestSnapshotByCurrency = new HashMap<>();
+        Map<Currency, Integer> snapshotCursorByCurrency = new HashMap<>();
         for (int i = 0; i < 12; i++) {
             BigDecimal liquidity = BigDecimal.ZERO;
             for (AccountView account : accounts) {
@@ -83,10 +89,24 @@ public class ComputeAssetsOverviewUseCase {
             }
 
             BigDecimal investments = BigDecimal.ZERO;
-            List<InvestmentSnapshot> monthSnapshots = snapshotByMonth.getOrDefault(current, List.of());
-            for (InvestmentSnapshot snapshot : monthSnapshots) {
-                investments = investments.add(convert(snapshot.getTotalInvested().getAmount(),
-                        snapshot.getTotalInvested().getCurrency(), baseCurrency, fxRatesToBase));
+            for (Map.Entry<Currency, List<InvestmentSnapshot>> entry : snapshotsByCurrency.entrySet()) {
+                Currency currency = entry.getKey();
+                List<InvestmentSnapshot> currencySnapshots = entry.getValue();
+                int cursor = snapshotCursorByCurrency.getOrDefault(currency, 0);
+
+                while (cursor < currencySnapshots.size()
+                        && !currencySnapshots.get(cursor).getMonth().isAfter(current)) {
+                    latestSnapshotByCurrency.put(currency,
+                            currencySnapshots.get(cursor).getTotalInvested().getAmount());
+                    cursor++;
+                }
+
+                snapshotCursorByCurrency.put(currency, cursor);
+
+                BigDecimal latest = latestSnapshotByCurrency.get(currency);
+                if (latest != null) {
+                    investments = investments.add(convert(latest, currency, baseCurrency, fxRatesToBase));
+                }
             }
 
             BigDecimal netWorth = liquidity.add(investments);
@@ -98,13 +118,12 @@ public class ComputeAssetsOverviewUseCase {
                 .map(AssetsMonthlyView::liquidity)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal annualInvestments = monthly.stream()
-                .map(AssetsMonthlyView::investments)
+        BigDecimal annualInvestments = snapshotList.stream()
+                .map(snapshot -> convert(snapshot.getTotalInvested().getAmount(),
+                        snapshot.getTotalInvested().getCurrency(), baseCurrency, fxRatesToBase))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal annualNetWorth = monthly.stream()
-                .map(AssetsMonthlyView::netWorth)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal annualNetWorth = annualLiquidity.add(annualInvestments);
 
         AssetsAnnualView annual = new AssetsAnnualView(year, baseCurrency, annualLiquidity, annualInvestments,
                 annualNetWorth);

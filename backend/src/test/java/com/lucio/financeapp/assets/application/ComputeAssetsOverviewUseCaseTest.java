@@ -92,4 +92,40 @@ class ComputeAssetsOverviewUseCaseTest {
         assertEquals(new BigDecimal("1550.00"), annual.investments());
         assertEquals(new BigDecimal("5390.00"), annual.netWorth());
     }
+
+    @Test
+    void shouldCarryForwardLatestInvestmentSnapshotAcrossFollowingMonths() {
+        UUID eurAccount = UUID.fromString("00000000-0000-0000-0000-000000000010");
+
+        when(financeProperties.getBaseCurrency()).thenReturn(Currency.EUR);
+        when(listAccounts.handle()).thenReturn(List.of(
+                new AccountView(eurAccount, "Fineco", AccountType.CHECKING, Currency.EUR)));
+
+        when(accountBalance.handle(eq(eurAccount), any(LocalDate.class)))
+                .thenReturn(new AccountBalanceView(eurAccount, LocalDate.of(2026, 1, 31), BigDecimal.ZERO,
+                        Currency.EUR));
+
+        YearMonth jan = YearMonth.of(2026, 1);
+        YearMonth feb = YearMonth.of(2026, 2);
+
+        InvestmentSnapshot janSnapshot = InvestmentSnapshot.of(jan,
+                Money.of(new BigDecimal("2000.00"), Currency.EUR),
+                "Jan snapshot");
+        InvestmentSnapshot febSnapshot = InvestmentSnapshot.of(feb,
+                Money.of(new BigDecimal("5000.00"), Currency.EUR),
+                "Feb snapshot");
+
+        when(snapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
+                .thenReturn(List.of(janSnapshot, febSnapshot));
+
+        var result = useCase.handle(2026);
+
+        assertEquals(new BigDecimal("2000.00"), result.monthly().get(0).investments());
+        assertEquals(new BigDecimal("5000.00"), result.monthly().get(1).investments());
+        assertEquals(new BigDecimal("5000.00"), result.monthly().get(2).investments());
+        assertEquals(new BigDecimal("5000.00"), result.monthly().get(11).investments());
+        assertEquals(new BigDecimal("7000.00"), result.annual().investments());
+        assertEquals(BigDecimal.ZERO, result.annual().liquidity());
+        assertEquals(new BigDecimal("7000.00"), result.annual().netWorth());
+    }
 }
