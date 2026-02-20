@@ -35,10 +35,7 @@ function fmt(n: number) {
 
 const accountTypes: { value: AccountType; label: string }[] = [
     { value: "CHECKING", label: "Conto corrente" },
-    { value: "SAVINGS", label: "Risparmio" },
-    { value: "CASH", label: "Contanti" },
     { value: "CARD", label: "Carta" },
-    { value: "INVESTMENT", label: "Investimento" },
 ]
 const accountCurrencies: Currency[] = ["EUR", "CHF"]
 

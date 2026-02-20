@@ -42,8 +42,12 @@ public class AccountController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UUID create(@Valid @RequestBody CreateAccountRequest request) {
-        return createUseCase.handle(new CreateAccountUseCase.CreateAccountCommand(
-                request.name(), request.type(), request.currency()));
+        try {
+            return createUseCase.handle(new CreateAccountUseCase.CreateAccountCommand(
+                    request.name(), request.type(), request.currency()));
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
     }
 
     @GetMapping

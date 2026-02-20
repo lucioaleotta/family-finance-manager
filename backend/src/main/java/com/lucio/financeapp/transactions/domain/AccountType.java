@@ -5,5 +5,9 @@ public enum AccountType {
     SAVINGS,
     CASH,
     CARD,
-    INVESTMENT
+    INVESTMENT;
+
+    public boolean isSupportedForManualAccount() {
+        return this == CHECKING || this == CARD;
+    }
 }

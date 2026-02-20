@@ -34,6 +34,7 @@ public class Account {
     }
 
     public static Account of(String name, AccountType type, Currency currency) {
+        ensureSupportedType(type);
         return new Account(UUID.randomUUID(), name, type, currency);
     }
 
@@ -54,8 +55,15 @@ public class Account {
     }
 
     public void update(String name, AccountType type, Currency currency) {
+        ensureSupportedType(type);
         this.name = name;
         this.type = type;
         this.currency = currency;
+    }
+
+    private static void ensureSupportedType(AccountType type) {
+        if (type == null || !type.isSupportedForManualAccount()) {
+            throw new IllegalArgumentException("Only CHECKING and CARD account types are allowed");
+        }
     }
 }
