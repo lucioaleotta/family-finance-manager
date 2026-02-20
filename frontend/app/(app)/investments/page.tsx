@@ -3,6 +3,7 @@
 import * as React from "react"
 import { MonthPicker } from "@/components/month-picker"
 import { apiGet, apiPut } from "@/lib/api"
+import { formatAmount } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
