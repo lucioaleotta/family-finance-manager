@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { z } from "zod"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -9,6 +9,7 @@ import { format } from "date-fns"
 
 import { apiGet, apiPost } from "@/lib/api"
 import type { AccountView, CreateTransactionRequest, Currency, TransactionType } from "@/lib/types"
+import { formatCurrency } from "@/lib/utils"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -33,8 +34,11 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+
+
 export default function NewTransactionPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
 
     const [accounts, setAccounts] = React.useState<AccountView[]>([])
     const [loadingAccounts, setLoadingAccounts] = React.useState(true)
@@ -53,6 +57,9 @@ export default function NewTransactionPage() {
     })
 
     const watchedAccountId = form.watch("accountId")
+    const watchedAmount = form.watch("amount")
+    const watchedCurrency = form.watch("currency")
+    const watchedDate = form.watch("date")
 
     React.useEffect(() => {
         let cancelled = false
@@ -61,7 +68,7 @@ export default function NewTransactionPage() {
                     setLoadingAccounts(true)
                     const data = await apiGet<AccountView[]>("/api/accounts")
                     if (!cancelled) setAccounts(data)
-                } catch (e) {
+                } catch {
                     toast.error("Impossibile caricare i conti. Verifica che il backend sia in esecuzione.")
                 } finally {
                     if (!cancelled) setLoadingAccounts(false)
@@ -70,7 +77,18 @@ export default function NewTransactionPage() {
         return () => {
             cancelled = true
         }
-    }, [toast])
+    }, [])
+
+    // Preseleziona il conto se l'accountId è passato come query parameter
+    React.useEffect(() => {
+        const accountId = searchParams.get("accountId")
+        if (accountId && accounts.length > 0) {
+            const accountExists = accounts.find((a) => a.id === accountId)
+            if (accountExists) {
+                form.setValue("accountId", accountId)
+            }
+        }
+    }, [searchParams, accounts, form])
 
     // Se selezioni un account, allinea la currency del form a quella del conto (scelta fintech UX)
     React.useEffect(() => {
@@ -178,6 +196,9 @@ export default function NewTransactionPage() {
                                     step="0.01"
                                     {...form.register("amount")}
                                 />
+                                <p className="text-xs text-slate-500">
+                                    Valore formattato: {formatCurrency(Number(watchedAmount ?? 0), watchedCurrency)}
+                                </p>
                             </div>
 
                             <div className="space-y-2">
@@ -207,14 +228,14 @@ export default function NewTransactionPage() {
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button type="button" variant="outline" className="w-full justify-start">
-                                            {format(form.getValues("date"), "yyyy-MM-dd")}
+                                            {format(watchedDate, "yyyy-MM-dd")}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"
-                                            selected={form.getValues("date")}
-                                            onSelect={(d) => d && form.setValue("date", d)}
+                                            selected={watchedDate}
+                                            onSelect={(d) => d && form.setValue("date", d, { shouldDirty: true })}
                                             initialFocus
                                         />
                                     </PopoverContent>

@@ -32,6 +32,17 @@ export async function apiPut<TReq>(path: string, body: TReq): Promise<void> {
   }
 }
 
+export async function apiDelete(path: string): Promise<void> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "DELETE",
+    headers: authHeader(),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => "")
+    throw new Error(`DELETE ${path} failed: ${res.status} ${text}`)
+  }
+}
+
 function authHeader(): Record<string, string> {
   const token = localStorage.getItem("auth_basic")
   return token ? { Authorization: `Basic ${token}` } : {}

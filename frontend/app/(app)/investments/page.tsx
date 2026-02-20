@@ -23,13 +23,7 @@ function fmtInputAmount(value: number) {
     return value.toFixed(2)
 }
 
-function fmtDisplayAmount(value: number) {
-    return new Intl.NumberFormat("it-IT", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-        useGrouping: true,
-    }).format(value)
-}
+
 
 export default function InvestmentsPage() {
     const [month, setMonth] = React.useState(currentYM())
@@ -162,7 +156,7 @@ export default function InvestmentsPage() {
                                     >
                                         <span className="font-medium">{s.month}</span>
                                         <span className="sm:text-right">
-                                            {s.currency} {fmtDisplayAmount(s.totalInvested)}
+                                            {s.currency} {formatAmount(s.totalInvested)}
                                             {s.note ? (
                                                 <span className="block text-xs text-slate-500">{s.note}</span>
                                             ) : null}

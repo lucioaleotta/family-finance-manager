@@ -12,6 +12,7 @@ import {
     CartesianGrid,
     Legend,
 } from "recharts"
+import { formatAmount } from "@/lib/utils"
 
 type AssetsMonthlyView = {
     month: string
@@ -43,7 +44,7 @@ export function AssetsOverviewChart({
                     <Tooltip
                         formatter={(value?: number) => {
                             const safe = typeof value === "number" ? value : 0
-                            return `${currency} ${safe.toFixed(2)}`
+                            return `${currency} ${formatAmount(safe)}`
                         }}
                     />
                     <Legend />

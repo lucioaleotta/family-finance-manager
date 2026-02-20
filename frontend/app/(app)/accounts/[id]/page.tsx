@@ -26,8 +26,7 @@ function yearsAround(now: number, past = 5, future = 1) {
 
 function fmt(n: number, currency: string) {
   const sign = n < 0 ? "-" : ""
-  const abs = Math.abs(n)
-  return `${sign}${currency} ${abs.toFixed(2)}`
+  return `${sign}${currency} ${formatAmount(Math.abs(n))}`
 }
 
 const MONTH_LABEL: Record<string, string> = {
@@ -58,43 +57,43 @@ export default function AccountYearPage() {
 
   React.useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      try {
-        setLoading(true)
+      ; (async () => {
+        try {
+          setLoading(true)
 
-        const [accounts, timeline] = await Promise.all([
-          apiGet<AccountView[]>("/api/accounts"),
-          apiGet<MonthlyAccountTimelineView[]>(
-            `/api/reporting/annual/timeline/accounts?year=${year}`
-          ),
-        ])
+          const [accounts, timeline] = await Promise.all([
+            apiGet<AccountView[]>("/api/accounts"),
+            apiGet<MonthlyAccountTimelineView[]>(
+              `/api/reporting/annual/timeline/accounts?year=${year}`
+            ),
+          ])
 
-        if (cancelled) return
+          if (cancelled) return
 
-        const a = accounts.find((x) => x.id === accountId) ?? null
-        setAccount(a)
+          const a = accounts.find((x) => x.id === accountId) ?? null
+          setAccount(a)
 
-        // filtra solo questo account e ordina per mese asc (01..12)
-        const mine = timeline
-          .filter((t) => t.accountId === accountId)
-          .sort((a, b) => a.month.localeCompare(b.month))
+          // filtra solo questo account e ordina per mese asc (01..12)
+          const mine = timeline
+            .filter((t) => t.accountId === accountId)
+            .sort((a, b) => a.month.localeCompare(b.month))
 
-        // se per qualche mese non ci sono dati, vogliamo comunque 12 card con 0
-        const filled: MonthlyAccountTimelineView[] = []
-        for (let m = 1; m <= 12; m++) {
-          const mm = String(m).padStart(2, "0")
-          const key = `${year}-${mm}`
-          const found = mine.find((x) => x.month === key)
-          filled.push(
-            found ?? { month: key, accountId, income: 0, expense: 0, net: 0 }
-          )
+          // se per qualche mese non ci sono dati, vogliamo comunque 12 card con 0
+          const filled: MonthlyAccountTimelineView[] = []
+          for (let m = 1; m <= 12; m++) {
+            const mm = String(m).padStart(2, "0")
+            const key = `${year}-${mm}`
+            const found = mine.find((x) => x.month === key)
+            filled.push(
+              found ?? { month: key, accountId, income: 0, expense: 0, net: 0 }
+            )
+          }
+
+          setRows(filled)
+        } finally {
+          if (!cancelled) setLoading(false)
         }
-
-        setRows(filled)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
+      })()
 
     return () => {
       cancelled = true

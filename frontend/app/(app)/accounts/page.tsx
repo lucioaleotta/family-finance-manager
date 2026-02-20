@@ -6,6 +6,7 @@ import Link from "next/link"
 import { apiGet, apiPost, apiPut } from "@/lib/api"
 import type { AccountType, AccountView, Currency } from "@/lib/types"
 import { MonthPicker } from "@/components/month-picker"
+import { formatAmount } from "@/lib/utils"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,11 +28,7 @@ function currentYM() {
     return `${y}-${m}`
 }
 
-function fmt(n: number) {
-    const sign = n < 0 ? "-" : ""
-    const abs = Math.abs(n)
-    return `${sign}${abs.toFixed(2)}`
-}
+
 
 const accountTypes: { value: AccountType; label: string }[] = [
     { value: "CHECKING", label: "Conto corrente" },
@@ -160,21 +157,34 @@ export default function AccountsPage() {
         })
     }, [accounts, summaryByAccount])
 
+    const totalBalance = React.useMemo(() => {
+        return rows.reduce((sum, row) => sum + row.net, 0)
+    }, [rows])
+
     return (
         <div className="space-y-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-semibold">Conti</h1>
                     <p className="text-slate-600">
-                        Saldo del mese per conto (include anche i transfer). Cashflow “esterno” lo vedi in Dashboard.
+                        Saldo del mese per conto. Cashflow “esterno” lo vedi in Dashboard.
                     </p>
                 </div>
 
                 <div className="flex items-center gap-3">
                     <MonthPicker value={month} onChange={setMonth} />
-                    <Button asChild variant="outline">
-                        <Link href="/transactions/new">Aggiungi transazione</Link>
-                    </Button>
+                    <Card className="shadow-sm flex-1 max-w-xs">
+                        <CardContent className="px-6 py-2.5 flex items-center justify-between">
+                            <span className="text-sm text-slate-600 font-medium">Saldo totale: </span>
+                            <span
+                                className={
+                                    "text-xl font-bold " + (totalBalance >= 0 ? "text-green-700" : "text-red-700")
+                                }
+                            >
+                                {formatAmount(totalBalance)}
+                            </span>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
 
@@ -267,12 +277,12 @@ export default function AccountsPage() {
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="rounded-xl border bg-white p-3">
                                     <div className="text-xs text-slate-500">Entrate</div>
-                                    <div className="mt-1 text-lg font-semibold">{fmt(income)}</div>
+                                    <div className="mt-1 text-lg font-semibold">{formatAmount(income)}</div>
                                 </div>
 
                                 <div className="rounded-xl border bg-white p-3">
                                     <div className="text-xs text-slate-500">Uscite</div>
-                                    <div className="mt-1 text-lg font-semibold">{fmt(expense)}</div>
+                                    <div className="mt-1 text-lg font-semibold">{formatAmount(expense)}</div>
                                 </div>
 
                                 <div className="rounded-xl border bg-white p-3">
@@ -282,21 +292,28 @@ export default function AccountsPage() {
                                             "mt-1 text-lg font-semibold " + (net >= 0 ? "text-green-700" : "text-red-700")
                                         }
                                     >
-                                        {fmt(net)}
+                                        {formatAmount(net)}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Prossimo step: link ai movimenti filtrati per account */}
-                            <div className="flex justify-end">
-                                <Button asChild variant="ghost">
-                                    <Link href={`/transactions?month=${month}`}>
-                                        Vedi movimenti →
+                            <div className="flex justify-between">
+                                <Button asChild variant="default" size="sm">
+                                    <Link href={`/transactions/new?accountId=${account.id}`}>
+                                        Aggiungi transazione
                                     </Link>
                                 </Button>
-                                <Button asChild variant="secondary">
-                                    <Link href={`/accounts/${account.id}`}>12 mesi →</Link>
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button asChild variant="ghost" size="sm">
+                                        <Link href={`/transactions?month=${month}`}>
+                                            Vedi movimenti →
+                                        </Link>
+                                    </Button>
+                                    <Button asChild variant="secondary" size="sm">
+                                        <Link href={`/accounts/${account.id}`}>12 mesi →</Link>
+                                    </Button>
+                                </div>
                             </div>
 
                             {loading && <div className="text-xs text-slate-500">Caricamento…</div>}

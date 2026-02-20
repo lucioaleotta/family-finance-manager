@@ -2,6 +2,7 @@ package com.lucio.financeapp.assets.application;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -114,14 +115,9 @@ public class ComputeAssetsOverviewUseCase {
             current = current.plusMonths(1);
         }
 
-        BigDecimal annualLiquidity = monthly.stream()
-                .map(AssetsMonthlyView::liquidity)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal annualInvestments = snapshotList.stream()
-                .map(snapshot -> convert(snapshot.getTotalInvested().getAmount(),
-                        snapshot.getTotalInvested().getCurrency(), baseCurrency, fxRatesToBase))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        int selectedMonth = (year == Year.now().getValue()) ? YearMonth.now().getMonthValue() : 12;
+        BigDecimal annualLiquidity = monthly.get(selectedMonth - 1).liquidity();
+        BigDecimal annualInvestments = monthly.get(selectedMonth - 1).investments();
 
         BigDecimal annualNetWorth = annualLiquidity.add(annualInvestments);
 

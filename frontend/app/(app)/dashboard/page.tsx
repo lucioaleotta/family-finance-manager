@@ -38,13 +38,7 @@ function yearsAround(now: number, past = 4) {
     return out
 }
 
-function formatMoney(n: number) {
-    return new Intl.NumberFormat("it-IT", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-        useGrouping: true
-    }).format(n)
-}
+
 
 export default function DashboardPage() {
     const [overview, setOverview] = React.useState<AssetsOverviewView | null>(null)
@@ -114,7 +108,7 @@ export default function DashboardPage() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-bold">
-                                    {currency} {formatMoney(annual?.netWorth ?? 0)}
+                                    {currency} {formatAmount(annual?.netWorth ?? 0)}
                                 </p>
                             </CardContent>
                         </Card>
@@ -125,7 +119,7 @@ export default function DashboardPage() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-bold">
-                                    {currency} {formatMoney(annual?.liquidity ?? 0)}
+                                    {currency} {formatAmount(annual?.liquidity ?? 0)}
                                 </p>
                             </CardContent>
                         </Card>
@@ -136,7 +130,7 @@ export default function DashboardPage() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-bold">
-                                    {currency} {formatMoney(annual?.investments ?? 0)}
+                                    {currency} {formatAmount(annual?.investments ?? 0)}
                                 </p>
                             </CardContent>
                         </Card>
@@ -151,7 +145,7 @@ export default function DashboardPage() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-bold">
-                                    {currency} {formatMoney(latestMonth?.netWorth ?? 0)}
+                                    {currency} {formatAmount(latestMonth?.netWorth ?? 0)}
                                 </p>
                             </CardContent>
                         </Card>
@@ -162,7 +156,7 @@ export default function DashboardPage() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-bold">
-                                    {currency} {formatMoney(latestMonth?.liquidity ?? 0)}
+                                    {currency} {formatAmount(latestMonth?.liquidity ?? 0)}
                                 </p>
                             </CardContent>
                         </Card>
@@ -173,7 +167,7 @@ export default function DashboardPage() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-2xl font-bold">
-                                    {currency} {formatMoney(latestMonth?.investments ?? 0)}
+                                    {currency} {formatAmount(latestMonth?.investments ?? 0)}
                                 </p>
                             </CardContent>
                         </Card>
