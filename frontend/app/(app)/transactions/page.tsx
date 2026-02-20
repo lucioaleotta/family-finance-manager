@@ -6,6 +6,7 @@ import { format } from "date-fns"
 
 import { apiDelete, apiGet, apiPut } from "@/lib/api"
 import type { AccountView, Currency, TransactionType } from "@/lib/types"
+import { formatCurrency } from "@/lib/utils"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
