@@ -12,7 +12,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         setMounted(true)
         const hasAuth = Boolean(localStorage.getItem("auth_basic"))
         setIsAuthenticated(hasAuth)
-        
+
         if (!hasAuth) {
             router.replace("/login")
         }
