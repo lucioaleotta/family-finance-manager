@@ -19,7 +19,9 @@ import com.lucio.financeapp.assets.api.AssetsAnnualView;
 import com.lucio.financeapp.assets.api.AssetsMonthlyView;
 import com.lucio.financeapp.assets.api.AssetsOverviewView;
 import com.lucio.financeapp.assets.domain.InvestmentSnapshot;
+import com.lucio.financeapp.assets.domain.LiquiditySnapshot;
 import com.lucio.financeapp.assets.domain.ports.InvestmentSnapshotRepository;
+import com.lucio.financeapp.assets.domain.ports.LiquiditySnapshotRepository;
 import com.lucio.financeapp.config.FinanceProperties;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.shared.infrastructure.fx.FxRateService;
@@ -35,17 +37,20 @@ public class ComputeAssetsOverviewUseCase {
     private final ListAccountsUseCase listAccounts;
     private final ComputeAccountBalanceUseCase accountBalance;
     private final InvestmentSnapshotRepository snapshots;
+    private final LiquiditySnapshotRepository liquiditySnapshots;
     private final FinanceProperties financeProperties;
     private final FxRateService fxRateService;
 
     public ComputeAssetsOverviewUseCase(ListAccountsUseCase listAccounts,
             ComputeAccountBalanceUseCase accountBalance,
             InvestmentSnapshotRepository snapshots,
+            LiquiditySnapshotRepository liquiditySnapshots,
             FinanceProperties financeProperties,
             FxRateService fxRateService) {
         this.listAccounts = listAccounts;
         this.accountBalance = accountBalance;
         this.snapshots = snapshots;
+        this.liquiditySnapshots = liquiditySnapshots;
         this.financeProperties = financeProperties;
         this.fxRateService = fxRateService;
     }
@@ -56,10 +61,25 @@ public class ComputeAssetsOverviewUseCase {
         YearMonth end = YearMonth.of(year, 12);
 
         List<AccountView> accounts = listAccounts.handle();
-        List<InvestmentSnapshot> snapshotList = snapshots.findByMonthBetween(start, end);
+        List<InvestmentSnapshot> investmentSnapshotList = snapshots.findByMonthBetween(start, end);
+        List<LiquiditySnapshot> liquiditySnapshotList = liquiditySnapshots.findByMonthBetween(start, end);
+
+        Map<java.util.UUID, AccountView> accountsById = new HashMap<>();
+        for (AccountView account : accounts) {
+            accountsById.put(account.id(), account);
+        }
+
+        Map<java.util.UUID, List<LiquiditySnapshot>> liquidityByAccount = new HashMap<>();
+        for (LiquiditySnapshot snapshot : liquiditySnapshotList) {
+            if (accountsById.containsKey(snapshot.getAccountId())) {
+                liquidityByAccount.computeIfAbsent(snapshot.getAccountId(), key -> new ArrayList<>()).add(snapshot);
+            }
+        }
+
+        liquidityByAccount.values().forEach(list -> list.sort(Comparator.comparing(LiquiditySnapshot::getMonth)));
 
         Map<Currency, List<InvestmentSnapshot>> snapshotsByCurrency = new HashMap<>();
-        for (InvestmentSnapshot snapshot : snapshotList) {
+        for (InvestmentSnapshot snapshot : investmentSnapshotList) {
             Currency currency = snapshot.getTotalInvested().getCurrency();
             snapshotsByCurrency.computeIfAbsent(currency, key -> new ArrayList<>()).add(snapshot);
         }
@@ -68,7 +88,8 @@ public class ComputeAssetsOverviewUseCase {
 
         Set<Currency> currencies = new HashSet<>();
         accounts.forEach(a -> currencies.add(a.currency()));
-        snapshotList.forEach(s -> currencies.add(s.getTotalInvested().getCurrency()));
+        investmentSnapshotList.forEach(s -> currencies.add(s.getTotalInvested().getCurrency()));
+        liquiditySnapshotList.forEach(s -> currencies.add(s.getLiquidity().getCurrency()));
 
         Map<Currency, BigDecimal> fxRatesToBase = new HashMap<>();
         for (Currency currency : currencies) {
@@ -81,12 +102,31 @@ public class ComputeAssetsOverviewUseCase {
         YearMonth current = start;
         Map<Currency, BigDecimal> latestSnapshotByCurrency = new HashMap<>();
         Map<Currency, Integer> snapshotCursorByCurrency = new HashMap<>();
+        Map<java.util.UUID, BigDecimal> latestLiquidityByAccount = new HashMap<>();
+        Map<java.util.UUID, Integer> liquidityCursorByAccount = new HashMap<>();
+
         for (int i = 0; i < 12; i++) {
             BigDecimal liquidity = BigDecimal.ZERO;
             for (AccountView account : accounts) {
-                AccountBalanceView balanceView = accountBalance.handle(account.id(), current.atEndOfMonth());
-                liquidity = liquidity.add(convert(balanceView.balance(), balanceView.currency(), baseCurrency,
-                        fxRatesToBase));
+                List<LiquiditySnapshot> accountSnapshots = liquidityByAccount.getOrDefault(account.id(), List.of());
+                int cursor = liquidityCursorByAccount.getOrDefault(account.id(), 0);
+
+                while (cursor < accountSnapshots.size() && !accountSnapshots.get(cursor).getMonth().isAfter(current)) {
+                    latestLiquidityByAccount.put(account.id(), accountSnapshots.get(cursor).getLiquidity().getAmount());
+                    cursor++;
+                }
+
+                liquidityCursorByAccount.put(account.id(), cursor);
+
+                BigDecimal snapshotLiquidity = latestLiquidityByAccount.get(account.id());
+                if (snapshotLiquidity != null) {
+                    liquidity = liquidity
+                            .add(convert(snapshotLiquidity, account.currency(), baseCurrency, fxRatesToBase));
+                } else {
+                    AccountBalanceView balanceView = accountBalance.handle(account.id(), current.atEndOfMonth());
+                    liquidity = liquidity.add(convert(balanceView.balance(), balanceView.currency(), baseCurrency,
+                            fxRatesToBase));
+                }
             }
 
             BigDecimal investments = BigDecimal.ZERO;

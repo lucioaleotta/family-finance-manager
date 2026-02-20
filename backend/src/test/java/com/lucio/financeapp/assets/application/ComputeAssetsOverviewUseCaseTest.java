@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.lucio.financeapp.assets.domain.InvestmentSnapshot;
 import com.lucio.financeapp.assets.domain.ports.InvestmentSnapshotRepository;
+import com.lucio.financeapp.assets.domain.ports.LiquiditySnapshotRepository;
 import com.lucio.financeapp.config.FinanceProperties;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.shared.domain.Money;
@@ -40,6 +41,9 @@ class ComputeAssetsOverviewUseCaseTest {
 
         @Mock
         private InvestmentSnapshotRepository snapshots;
+
+        @Mock
+        private LiquiditySnapshotRepository liquiditySnapshots;
 
         @Mock
         private FinanceProperties financeProperties;
@@ -81,6 +85,8 @@ class ComputeAssetsOverviewUseCaseTest {
 
                 when(snapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
                                 .thenReturn(List.of(eurSnapshot, chfSnapshot));
+                when(liquiditySnapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
+                                .thenReturn(List.of());
 
                 var result = useCase.handle(2026);
 
@@ -124,6 +130,8 @@ class ComputeAssetsOverviewUseCaseTest {
 
                 when(snapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
                                 .thenReturn(List.of(janSnapshot, febSnapshot));
+                when(liquiditySnapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
+                                .thenReturn(List.of());
 
                 var result = useCase.handle(2026);
 
