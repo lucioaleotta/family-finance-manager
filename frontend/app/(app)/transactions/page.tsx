@@ -337,13 +337,20 @@ export default function TransactionsPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="mt-2 flex items-center justify-between">
-                                        <div className="text-slate-700">
-                                            {t.category} {t.description ? `— ${t.description}` : ""}
+                                    <div className="mt-2 space-y-1">
+                                        <div className="flex items-center justify-between">
+                                            <div className="font-medium text-slate-700">
+                                                {t.category}
+                                            </div>
+                                            <div className="text-lg font-semibold">
+                                                {formatCurrency(Number(t.amount.amount), t.amount.currency)}
+                                            </div>
                                         </div>
-                                        <div className="text-lg font-semibold">
-                                            {formatCurrency(Number(t.amount.amount), t.amount.currency)}
-                                        </div>
+                                        {t.description && (
+                                            <div className="text-sm text-slate-600">
+                                                {t.description}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
