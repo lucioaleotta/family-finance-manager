@@ -40,6 +40,7 @@ public class JpaTransactionRepository implements TransactionRepository {
     }
 
     @Override
+    @SuppressWarnings("null")
     public Transaction save(Transaction transaction) {
         return delegate.save(transaction);
     }
@@ -52,11 +53,13 @@ public class JpaTransactionRepository implements TransactionRepository {
     }
 
     @Override
+    @SuppressWarnings("null")
     public Optional<Transaction> findById(UUID id) {
         return delegate.findById(id);
     }
 
     @Override
+    @SuppressWarnings("null")
     public void deleteById(UUID id) {
         delegate.deleteById(id);
     }

@@ -63,7 +63,7 @@ public class Account {
 
     private static void ensureSupportedType(AccountType type) {
         if (type == null || !type.isSupportedForManualAccount()) {
-            throw new IllegalArgumentException("Only CHECKING and CARD account types are allowed");
+            throw new IllegalArgumentException("Only CHECKING, LIQUIDITY and INVESTMENT account types are allowed");
         }
     }
 }

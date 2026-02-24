@@ -1,5 +1,7 @@
 package com.lucio.financeapp.assets.infrastructure.web;
 
+import com.lucio.financeapp.assets.api.CategoryMonthlyTotalView;
+import com.lucio.financeapp.assets.application.ComputeLiquidityMonthlyTotalsUseCase;
 import com.lucio.financeapp.assets.api.LiquiditySnapshotView;
 import com.lucio.financeapp.assets.application.ListLastLiquiditySnapshotsUseCase;
 import com.lucio.financeapp.assets.application.UpsertLiquiditySnapshotUseCase;
@@ -26,11 +28,14 @@ public class LiquiditySnapshotController {
 
     private final UpsertLiquiditySnapshotUseCase upsertUseCase;
     private final ListLastLiquiditySnapshotsUseCase listLastUseCase;
+    private final ComputeLiquidityMonthlyTotalsUseCase totalsUseCase;
 
     public LiquiditySnapshotController(UpsertLiquiditySnapshotUseCase upsertUseCase,
-            ListLastLiquiditySnapshotsUseCase listLastUseCase) {
+            ListLastLiquiditySnapshotsUseCase listLastUseCase,
+            ComputeLiquidityMonthlyTotalsUseCase totalsUseCase) {
         this.upsertUseCase = upsertUseCase;
         this.listLastUseCase = listLastUseCase;
+        this.totalsUseCase = totalsUseCase;
     }
 
     @PutMapping("/snapshots")
@@ -49,6 +54,13 @@ public class LiquiditySnapshotController {
             @RequestParam("accountId") UUID accountId) {
         YearMonth endMonth = month == null ? null : YearMonth.parse(month);
         return listLastUseCase.handle(endMonth, accountId);
+    }
+
+    @GetMapping("/totals")
+    public List<CategoryMonthlyTotalView> totals(
+            @RequestParam(value = "month", required = false) String month) {
+        YearMonth targetMonth = month == null ? YearMonth.now() : YearMonth.parse(month);
+        return totalsUseCase.handle(targetMonth);
     }
 
     record UpsertRequest(

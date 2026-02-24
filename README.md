@@ -73,4 +73,5 @@ The project includes a development script (`scripts/dev.sh`) to manage all servi
 
 ## Comandi utili
 - Backend cheat sheet: [backend/docs/commands-cheatsheet.md](backend/docs/commands-cheatsheet.md)
+- Git branching convention: [backend/docs/git-branching-convention.md](backend/docs/git-branching-convention.md)
 - Frontend development script: [frontend/scripts/dev.sh](frontend/scripts/dev.sh)

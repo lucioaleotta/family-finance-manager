@@ -2,13 +2,15 @@ package com.lucio.financeapp.assets.application;
 
 import com.lucio.financeapp.assets.api.NetWorthMonthlyView;
 import com.lucio.financeapp.assets.api.NetWorthReconciliationView;
+import com.lucio.financeapp.assets.domain.LiquiditySnapshot;
 import com.lucio.financeapp.assets.domain.ports.InvestmentSnapshotRepository;
+import com.lucio.financeapp.assets.domain.ports.LiquiditySnapshotRepository;
 import com.lucio.financeapp.transactions.api.AccountView;
 import com.lucio.financeapp.transactions.api.TransactionFacade;
 import com.lucio.financeapp.transactions.api.TransactionView;
-import com.lucio.financeapp.transactions.application.ComputeAccountBalanceUseCase;
 import com.lucio.financeapp.transactions.application.ListAccountsUseCase;
 import com.lucio.financeapp.shared.domain.Currency;
+import com.lucio.financeapp.transactions.domain.AccountType;
 import com.lucio.financeapp.transactions.domain.TransactionKind;
 import com.lucio.financeapp.transactions.domain.TransactionType;
 import com.lucio.financeapp.config.FinanceProperties;
@@ -16,9 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -30,19 +33,19 @@ public class ComputeNetWorthReconciliationUseCase {
         // per calcolare net worth del mese precedente (Dec anno-1) senza dipendere da
         // reporting
         private final ListAccountsUseCase listAccounts;
-        private final ComputeAccountBalanceUseCase accountBalance;
+        private final LiquiditySnapshotRepository liquiditySnapshots;
         private final InvestmentSnapshotRepository snapshots;
         private final FinanceProperties financeProperties;
 
         public ComputeNetWorthReconciliationUseCase(ComputeNetWorthTimelineUseCase netWorthTimeline,
                         TransactionFacade transactionFacade,
                         ListAccountsUseCase listAccounts,
-                        ComputeAccountBalanceUseCase accountBalance,
+                        LiquiditySnapshotRepository liquiditySnapshots,
                         InvestmentSnapshotRepository snapshots, FinanceProperties financeProperties) {
                 this.netWorthTimeline = netWorthTimeline;
                 this.transactionFacade = transactionFacade;
                 this.listAccounts = listAccounts;
-                this.accountBalance = accountBalance;
+                this.liquiditySnapshots = liquiditySnapshots;
                 this.snapshots = snapshots;
                 this.financeProperties = financeProperties;
         }
@@ -111,19 +114,28 @@ public class ComputeNetWorthReconciliationUseCase {
         }
 
         private BigDecimal computeNetWorthAt(YearMonth ym, Currency currency) {
-                LocalDate asOf = ym.atEndOfMonth();
-
                 List<AccountView> accounts = listAccounts.handle().stream()
                                 .filter(a -> a.currency() == currency)
                                 .toList();
+                Set<UUID> liquidityAccountIds = accounts.stream()
+                                .filter(a -> a.type() == AccountType.LIQUIDITY)
+                                .map(AccountView::id)
+                                .collect(java.util.stream.Collectors.toSet());
+                List<UUID> investmentAccountIds = accounts.stream()
+                                .filter(a -> a.type() == AccountType.INVESTMENT)
+                                .map(AccountView::id)
+                                .toList();
 
-                BigDecimal liquidity = accounts.stream()
-                                .map(a -> accountBalance.handle(a.id(), asOf).balance())
+                BigDecimal liquidity = liquiditySnapshots.findByMonthBetween(ym, ym).stream()
+                                .filter(s -> liquidityAccountIds.contains(s.getAccountId()))
+                                .map(LiquiditySnapshot::getLiquidity)
+                                .map(money -> money.getAmount())
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                BigDecimal invested = snapshots.findByMonthAndCurrency(ym, currency)
+                BigDecimal invested = snapshots.findByMonthAndAccountIds(ym, investmentAccountIds)
+                                .stream()
                                 .map(s -> s.getTotalInvested().getAmount())
-                                .orElse(BigDecimal.ZERO);
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 return liquidity.add(invested);
         }

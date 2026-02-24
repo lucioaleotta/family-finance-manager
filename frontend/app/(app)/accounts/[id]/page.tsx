@@ -6,6 +6,7 @@ import { useParams } from "next/navigation"
 
 import { apiGet } from "@/lib/api"
 import type { AccountView } from "@/lib/types"
+import { formatAmount } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"

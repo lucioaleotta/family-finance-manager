@@ -1,6 +1,7 @@
 package com.lucio.financeapp.transactions.application;
 
 import com.lucio.financeapp.transactions.api.AccountView;
+import com.lucio.financeapp.transactions.domain.AccountType;
 import com.lucio.financeapp.transactions.domain.ports.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,12 @@ public class ListAccountsUseCase {
 
     public List<AccountView> handle() {
         return repository.findAll().stream()
+                .map(a -> new AccountView(a.getId(), a.getName(), a.getType(), a.getCurrency()))
+                .toList();
+    }
+
+    public List<AccountView> handle(AccountType type) {
+        return repository.findByType(type).stream()
                 .map(a -> new AccountView(a.getId(), a.getName(), a.getType(), a.getCurrency()))
                 .toList();
     }

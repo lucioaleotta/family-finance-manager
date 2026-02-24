@@ -1,6 +1,7 @@
 package com.lucio.financeapp.transactions.infrastructure.persistence;
 
 import com.lucio.financeapp.transactions.domain.Account;
+import com.lucio.financeapp.transactions.domain.AccountType;
 import com.lucio.financeapp.transactions.domain.ports.AccountRepository;
 
 import jakarta.validation.constraints.NotNull;
@@ -22,6 +23,7 @@ public class JpaAccountRepository implements AccountRepository {
     }
 
     @Override
+    @SuppressWarnings("null")
     public Account save(@NotNull Account account) {
         return delegate.save(account);
     }
@@ -32,6 +34,12 @@ public class JpaAccountRepository implements AccountRepository {
     }
 
     @Override
+    public List<Account> findByType(AccountType type) {
+        return delegate.findByType(type);
+    }
+
+    @Override
+    @SuppressWarnings("null")
     public Optional<Account> findById(UUID id) {
         return delegate.findById(id);
     }
@@ -40,8 +48,16 @@ public class JpaAccountRepository implements AccountRepository {
     public Optional<Account> findByName(String name) {
         return delegate.findByName(name);
     }
+
+    @Override
+    @SuppressWarnings("null")
+    public void deleteById(UUID id) {
+        delegate.deleteById(id);
+    }
 }
 
 interface SpringDataAccountRepository extends JpaRepository<Account, UUID> {
     Optional<Account> findByName(String name);
+
+    List<Account> findByType(AccountType type);
 }

@@ -66,7 +66,7 @@ export default function NewTransactionPage() {
             ; (async () => {
                 try {
                     setLoadingAccounts(true)
-                    const data = await apiGet<AccountView[]>("/api/accounts")
+                    const data = await apiGet<AccountView[]>("/api/accounts?type=CHECKING")
                     if (!cancelled) setAccounts(data)
                 } catch {
                     toast.error("Impossibile caricare i conti. Verifica che il backend sia in esecuzione.")

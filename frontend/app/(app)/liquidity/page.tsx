@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { MonthPicker } from "@/components/month-picker"
 import { apiGet, apiPut } from "@/lib/api"
 import { formatAmount } from "@/lib/utils"
@@ -23,6 +24,11 @@ type LiquiditySnapshotView = {
     note?: string | null
 }
 
+type CategoryMonthlyTotalView = {
+    currency: "EUR" | "CHF"
+    total: number
+}
+
 function currentYM() {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
@@ -35,6 +41,7 @@ function fmtInputAmount(value: number) {
 export default function LiquidityPage() {
     const [month, setMonth] = React.useState(currentYM())
     const [accounts, setAccounts] = React.useState<AccountView[]>([])
+    const [totals, setTotals] = React.useState<CategoryMonthlyTotalView[]>([])
     const [accountId, setAccountId] = React.useState("")
     const [amount, setAmount] = React.useState("")
     const [note, setNote] = React.useState("")
@@ -54,7 +61,7 @@ export default function LiquidityPage() {
 
             ; (async () => {
                 try {
-                    const data = await apiGet<AccountView[]>("/api/accounts")
+                    const data = await apiGet<AccountView[]>("/api/accounts?type=LIQUIDITY")
                     if (!cancelled) {
                         setAccounts(data)
                         if (data.length > 0) {
@@ -63,7 +70,7 @@ export default function LiquidityPage() {
                     }
                 } catch {
                     if (!cancelled) {
-                        setError("Impossibile caricare i conti.")
+                        setError("Impossibile caricare i conti LIQUIDITY.")
                     }
                 }
             })()
@@ -72,6 +79,11 @@ export default function LiquidityPage() {
             cancelled = true
         }
     }, [])
+
+    const loadTotals = React.useCallback(async () => {
+        const data = await apiGet<CategoryMonthlyTotalView[]>(`/api/assets/liquidity/totals?month=${month}`)
+        setTotals(data)
+    }, [month])
 
     const loadSnapshots = React.useCallback(async () => {
         if (!accountId) {
@@ -108,6 +120,10 @@ export default function LiquidityPage() {
     }, [accountId, month])
 
     React.useEffect(() => {
+        void loadTotals()
+    }, [loadTotals])
+
+    React.useEffect(() => {
         void loadSnapshots()
     }, [loadSnapshots])
 
@@ -136,7 +152,7 @@ export default function LiquidityPage() {
                 note: note.trim() || null,
             })
 
-            await loadSnapshots()
+            await Promise.all([loadSnapshots(), loadTotals()])
         } catch {
             setError("Salvataggio non riuscito. Riprova.")
         } finally {
@@ -150,6 +166,26 @@ export default function LiquidityPage() {
 
             <Card>
                 <CardHeader>
+                    <CardTitle>Totale automatico del mese</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {totals.length === 0 ? (
+                        <p className="text-sm text-slate-600">Nessuno snapshot LIQUIDITY presente per {month}.</p>
+                    ) : (
+                        <div className="flex flex-wrap gap-3">
+                            {totals.map((total) => (
+                                <div key={total.currency} className="rounded-xl border bg-white px-4 py-2 text-sm">
+                                    <span className="text-slate-500">{total.currency}: </span>
+                                    <span className="font-semibold">{formatAmount(total.total)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
                     <CardTitle>Snapshot mensile per conto</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -160,6 +196,7 @@ export default function LiquidityPage() {
                             className="h-10 min-w-[220px] rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                             value={accountId}
                             onChange={(event) => setAccountId(event.target.value)}
+                            disabled={accounts.length === 0}
                         >
                             {accounts.map((account) => (
                                 <option key={account.id} value={account.id}>
@@ -188,11 +225,17 @@ export default function LiquidityPage() {
                         </div>
 
                         <Button onClick={saveSnapshot} disabled={!isAmountValid || saving || !accountId}>
-                            {saving ? "Saving..." : "Save snapshot"}
+                            {saving ? "Salvataggio..." : "Salva snapshot"}
                         </Button>
                     </div>
 
                     {error && <p className="text-sm text-red-600">{error}</p>}
+
+                    {accounts.length === 0 && (
+                        <p className="text-sm text-slate-600">
+                            Nessun conto LIQUIDITY trovato. Crealo da <Link className="underline" href="/accounts/manage">Gestione Conti</Link>.
+                        </p>
+                    )}
                 </CardContent>
             </Card>
 
@@ -202,7 +245,7 @@ export default function LiquidityPage() {
                 </CardHeader>
                 <CardContent>
                     {loading ? (
-                        <p>Loading...</p>
+                        <p>Caricamento...</p>
                     ) : (
                         <div className="space-y-2">
                             {[...snapshots]
@@ -215,9 +258,7 @@ export default function LiquidityPage() {
                                         <span className="font-medium">{snapshot.month}</span>
                                         <span className="sm:text-right">
                                             {snapshot.currency} {formatAmount(snapshot.liquidity)}
-                                            {snapshot.note ? (
-                                                <span className="block text-xs text-slate-500">{snapshot.note}</span>
-                                            ) : null}
+                                            {snapshot.note ? <span className="block text-xs text-slate-500">{snapshot.note}</span> : null}
                                         </span>
                                     </div>
                                 ))}

@@ -4,6 +4,7 @@ import com.lucio.financeapp.assets.api.LiquiditySnapshotView;
 import com.lucio.financeapp.assets.domain.LiquiditySnapshot;
 import com.lucio.financeapp.assets.domain.ports.LiquiditySnapshotRepository;
 import com.lucio.financeapp.transactions.domain.Account;
+import com.lucio.financeapp.transactions.domain.AccountType;
 import com.lucio.financeapp.transactions.domain.ports.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,9 @@ public class ListLastLiquiditySnapshotsUseCase {
     public List<LiquiditySnapshotView> handle(YearMonth endMonth, UUID accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
+        if (account.getType() != AccountType.LIQUIDITY) {
+            throw new IllegalArgumentException("Account type must be LIQUIDITY");
+        }
 
         YearMonth end = endMonth == null ? YearMonth.now() : endMonth;
         YearMonth start = end.minusMonths(11);

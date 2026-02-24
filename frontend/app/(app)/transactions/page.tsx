@@ -69,7 +69,7 @@ export default function TransactionsPage() {
 
     const loadData = React.useCallback(async () => {
         const [a, t] = await Promise.all([
-            apiGet<AccountView[]>("/api/accounts"),
+            apiGet<AccountView[]>("/api/accounts?type=CHECKING"),
             apiGet<TransactionView[]>(`/api/transactions?month=${month}`),
         ])
         setAccounts(a)

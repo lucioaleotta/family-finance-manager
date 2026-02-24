@@ -4,6 +4,7 @@ import com.lucio.financeapp.assets.domain.LiquiditySnapshot;
 import com.lucio.financeapp.assets.domain.ports.LiquiditySnapshotRepository;
 import com.lucio.financeapp.shared.domain.Money;
 import com.lucio.financeapp.transactions.domain.Account;
+import com.lucio.financeapp.transactions.domain.AccountType;
 import com.lucio.financeapp.transactions.domain.ports.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,9 @@ public class UpsertLiquiditySnapshotUseCase {
     public void handle(Command command) {
         Account account = accountRepository.findById(command.accountId())
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + command.accountId()));
+        if (account.getType() != AccountType.LIQUIDITY) {
+            throw new IllegalArgumentException("Account type must be LIQUIDITY");
+        }
 
         Money money = Money.of(command.liquidity(), account.getCurrency());
 

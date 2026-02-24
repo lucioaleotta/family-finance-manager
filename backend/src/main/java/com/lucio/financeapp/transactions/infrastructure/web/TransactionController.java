@@ -5,7 +5,6 @@ import com.lucio.financeapp.transactions.application.DeleteTransactionUseCase;
 import com.lucio.financeapp.transactions.application.ListTransactionsByMonthUseCase;
 import com.lucio.financeapp.transactions.application.RegisterTransactionUseCase;
 import com.lucio.financeapp.transactions.application.UpdateTransactionUseCase;
-import com.lucio.financeapp.shared.domain.Money;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.transactions.domain.TransactionType;
 import jakarta.validation.Valid;

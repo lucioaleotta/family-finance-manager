@@ -2,6 +2,7 @@ package com.lucio.financeapp.transactions.infrastructure.web;
 
 import com.lucio.financeapp.transactions.api.AccountView;
 import com.lucio.financeapp.transactions.application.CreateAccountUseCase;
+import com.lucio.financeapp.transactions.application.DeleteAccountUseCase;
 import com.lucio.financeapp.transactions.application.UpdateAccountUseCase;
 import com.lucio.financeapp.transactions.application.ListAccountsUseCase;
 import com.lucio.financeapp.transactions.domain.AccountType;
@@ -13,6 +14,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,15 +28,18 @@ public class AccountController {
 
     private final CreateAccountUseCase createUseCase;
     private final UpdateAccountUseCase updateUseCase;
+    private final DeleteAccountUseCase deleteUseCase;
     private final ListAccountsUseCase listUseCase;
     private final ComputeAccountBalanceUseCase balanceUseCase;
 
     public AccountController(CreateAccountUseCase createUseCase,
             UpdateAccountUseCase updateUseCase,
+            DeleteAccountUseCase deleteUseCase,
             ListAccountsUseCase listUseCase,
             ComputeAccountBalanceUseCase balanceUseCase) {
         this.createUseCase = createUseCase;
         this.updateUseCase = updateUseCase;
+        this.deleteUseCase = deleteUseCase;
         this.listUseCase = listUseCase;
         this.balanceUseCase = balanceUseCase;
     }
@@ -51,8 +56,8 @@ public class AccountController {
     }
 
     @GetMapping
-    public List<AccountView> list() {
-        return listUseCase.handle();
+    public List<AccountView> list(@RequestParam(value = "type", required = false) AccountType type) {
+        return type == null ? listUseCase.handle() : listUseCase.handle(type);
     }
 
     @PutMapping("/{accountId}")
@@ -65,6 +70,19 @@ public class AccountController {
             String message = ex.getMessage();
             boolean notFound = message != null && message.toLowerCase().contains("not found");
             throw new ResponseStatusException(notFound ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST, message);
+        }
+    }
+
+    @DeleteMapping("/{accountId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable UUID accountId) {
+        try {
+            deleteUseCase.handle(accountId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+        } catch (DataIntegrityViolationException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Account cannot be deleted because it is referenced by existing data");
         }
     }
 

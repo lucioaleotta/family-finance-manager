@@ -2,7 +2,6 @@ package com.lucio.financeapp.assets.infrastructure.web;
 
 import com.lucio.financeapp.assets.api.NetWorthMonthlyView;
 import com.lucio.financeapp.assets.application.ComputeNetWorthTimelineUseCase;
-import com.lucio.financeapp.shared.domain.Currency;
 import org.springframework.web.bind.annotation.*;
 import com.lucio.financeapp.assets.api.NetWorthReconciliationView;
 import com.lucio.financeapp.assets.application.ComputeNetWorthReconciliationUseCase;

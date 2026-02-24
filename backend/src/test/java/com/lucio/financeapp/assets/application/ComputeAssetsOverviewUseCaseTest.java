@@ -1,12 +1,9 @@
 package com.lucio.financeapp.assets.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
@@ -18,13 +15,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.lucio.financeapp.assets.domain.InvestmentSnapshot;
+import com.lucio.financeapp.assets.domain.LiquiditySnapshot;
 import com.lucio.financeapp.assets.domain.ports.InvestmentSnapshotRepository;
 import com.lucio.financeapp.assets.domain.ports.LiquiditySnapshotRepository;
 import com.lucio.financeapp.config.FinanceProperties;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.shared.domain.Money;
 import com.lucio.financeapp.shared.infrastructure.fx.FxRateService;
-import com.lucio.financeapp.transactions.api.AccountBalanceView;
 import com.lucio.financeapp.transactions.api.AccountView;
 import com.lucio.financeapp.transactions.application.ComputeAccountBalanceUseCase;
 import com.lucio.financeapp.transactions.application.ListAccountsUseCase;
@@ -56,37 +53,45 @@ class ComputeAssetsOverviewUseCaseTest {
 
         @Test
         void shouldConvertCurrenciesAndAggregateAnnualAndMonthly() {
-                UUID eurAccount = UUID.fromString("00000000-0000-0000-0000-000000000010");
-                UUID chfAccount = UUID.fromString("00000000-0000-0000-0000-000000000020");
+                UUID eurLiquidityAccount = UUID.fromString("00000000-0000-0000-0000-000000000010");
+                UUID chfLiquidityAccount = UUID.fromString("00000000-0000-0000-0000-000000000020");
+                UUID eurInvestmentAccount = UUID.fromString("00000000-0000-0000-0000-000000000030");
+                UUID chfInvestmentAccount = UUID.fromString("00000000-0000-0000-0000-000000000040");
 
                 when(financeProperties.getBaseCurrency()).thenReturn(Currency.EUR);
                 when(listAccounts.handle()).thenReturn(List.of(
-                                new AccountView(eurAccount, "Fineco", AccountType.CHECKING, Currency.EUR),
-                                new AccountView(chfAccount, "CHF", AccountType.CHECKING, Currency.CHF)));
-
-                when(accountBalance.handle(eq(eurAccount), any(LocalDate.class)))
-                                .thenReturn(new AccountBalanceView(eurAccount, LocalDate.of(2026, 1, 31),
-                                                new BigDecimal("100.00"),
-                                                Currency.EUR));
-                when(accountBalance.handle(eq(chfAccount), any(LocalDate.class)))
-                                .thenReturn(new AccountBalanceView(chfAccount, LocalDate.of(2026, 1, 31),
-                                                new BigDecimal("200.00"),
-                                                Currency.CHF));
+                                new AccountView(eurLiquidityAccount, "Fineco", AccountType.LIQUIDITY, Currency.EUR),
+                                new AccountView(chfLiquidityAccount, "CHF Liquidity", AccountType.LIQUIDITY,
+                                                Currency.CHF),
+                                new AccountView(eurInvestmentAccount, "ETF EUR", AccountType.INVESTMENT,
+                                                Currency.EUR),
+                                new AccountView(chfInvestmentAccount, "ETF CHF", AccountType.INVESTMENT,
+                                                Currency.CHF)));
 
                 when(fxRateService.getRate(Currency.CHF, Currency.EUR)).thenReturn(new BigDecimal("1.10"));
 
                 YearMonth jan = YearMonth.of(2026, 1);
                 InvestmentSnapshot eurSnapshot = InvestmentSnapshot.of(jan,
+                                eurInvestmentAccount,
                                 Money.of(new BigDecimal("1000.00"), Currency.EUR),
                                 "EUR snapshot");
                 InvestmentSnapshot chfSnapshot = InvestmentSnapshot.of(jan,
+                                chfInvestmentAccount,
                                 Money.of(new BigDecimal("500.00"), Currency.CHF),
                                 "CHF snapshot");
+                LiquiditySnapshot eurLiquiditySnapshot = LiquiditySnapshot.of(jan,
+                                eurLiquidityAccount,
+                                Money.of(new BigDecimal("100.00"), Currency.EUR),
+                                "EUR liquidity");
+                LiquiditySnapshot chfLiquiditySnapshot = LiquiditySnapshot.of(jan,
+                                chfLiquidityAccount,
+                                Money.of(new BigDecimal("200.00"), Currency.CHF),
+                                "CHF liquidity");
 
                 when(snapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
                                 .thenReturn(List.of(eurSnapshot, chfSnapshot));
                 when(liquiditySnapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
-                                .thenReturn(List.of());
+                                .thenReturn(List.of(eurLiquiditySnapshot, chfLiquiditySnapshot));
 
                 var result = useCase.handle(2026);
 
@@ -107,24 +112,22 @@ class ComputeAssetsOverviewUseCaseTest {
 
         @Test
         void shouldCarryForwardLatestInvestmentSnapshotAcrossFollowingMonths() {
-                UUID eurAccount = UUID.fromString("00000000-0000-0000-0000-000000000010");
+                UUID eurInvestmentAccount = UUID.fromString("00000000-0000-0000-0000-000000000010");
 
                 when(financeProperties.getBaseCurrency()).thenReturn(Currency.EUR);
                 when(listAccounts.handle()).thenReturn(List.of(
-                                new AccountView(eurAccount, "Fineco", AccountType.CHECKING, Currency.EUR)));
-
-                when(accountBalance.handle(eq(eurAccount), any(LocalDate.class)))
-                                .thenReturn(new AccountBalanceView(eurAccount, LocalDate.of(2026, 1, 31),
-                                                BigDecimal.ZERO,
-                                                Currency.EUR));
+                                new AccountView(eurInvestmentAccount, "Fineco", AccountType.INVESTMENT,
+                                                Currency.EUR)));
 
                 YearMonth jan = YearMonth.of(2026, 1);
                 YearMonth feb = YearMonth.of(2026, 2);
 
                 InvestmentSnapshot janSnapshot = InvestmentSnapshot.of(jan,
+                                eurInvestmentAccount,
                                 Money.of(new BigDecimal("2000.00"), Currency.EUR),
                                 "Jan snapshot");
                 InvestmentSnapshot febSnapshot = InvestmentSnapshot.of(feb,
+                                eurInvestmentAccount,
                                 Money.of(new BigDecimal("5000.00"), Currency.EUR),
                                 "Feb snapshot");
 

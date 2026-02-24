@@ -14,23 +14,36 @@ import org.springframework.transaction.annotation.Transactional;
 import com.lucio.financeapp.assets.api.InvestmentSnapshotView;
 import com.lucio.financeapp.assets.domain.InvestmentSnapshot;
 import com.lucio.financeapp.assets.domain.ports.InvestmentSnapshotRepository;
-import com.lucio.financeapp.shared.domain.Currency;
+import com.lucio.financeapp.transactions.domain.Account;
+import com.lucio.financeapp.transactions.domain.AccountType;
+import com.lucio.financeapp.transactions.domain.ports.AccountRepository;
+
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
 public class ListLastInvestmentSnapshotsUseCase {
 
     private final InvestmentSnapshotRepository repository;
+    private final AccountRepository accountRepository;
 
-    public ListLastInvestmentSnapshotsUseCase(InvestmentSnapshotRepository repository) {
+    public ListLastInvestmentSnapshotsUseCase(InvestmentSnapshotRepository repository,
+            AccountRepository accountRepository) {
         this.repository = repository;
+        this.accountRepository = accountRepository;
     }
 
-    public List<InvestmentSnapshotView> handle(YearMonth endMonth, Currency currency) {
+    public List<InvestmentSnapshotView> handle(YearMonth endMonth, UUID accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
+        if (account.getType() != AccountType.INVESTMENT) {
+            throw new IllegalArgumentException("Account type must be INVESTMENT");
+        }
+
         YearMonth end = endMonth == null ? YearMonth.now() : endMonth;
         YearMonth start = end.minusMonths(11);
 
-        List<InvestmentSnapshot> snapshots = repository.findByMonthBetween(start, end, currency);
+        List<InvestmentSnapshot> snapshots = repository.findByMonthBetweenAndAccountId(start, end, accountId);
         Map<YearMonth, InvestmentSnapshot> byMonth = snapshots.stream()
                 .collect(Collectors.toMap(InvestmentSnapshot::getMonth, Function.identity(), (a, b) -> a));
 
@@ -41,14 +54,18 @@ public class ListLastInvestmentSnapshotsUseCase {
             if (snapshot != null) {
                 out.add(new InvestmentSnapshotView(
                         snapshot.getMonth(),
+                        accountId,
+                        account.getName(),
                         snapshot.getTotalInvested().getAmount(),
-                        currency,
+                        account.getCurrency(),
                         snapshot.getNote()));
             } else {
                 out.add(new InvestmentSnapshotView(
                         current,
+                        accountId,
+                        account.getName(),
                         BigDecimal.ZERO,
-                        currency,
+                        account.getCurrency(),
                         null));
             }
             current = current.plusMonths(1);
