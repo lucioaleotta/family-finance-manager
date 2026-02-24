@@ -129,13 +129,13 @@ export default function ManageAccountsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="w-full max-w-none space-y-6">
             <div className="space-y-1">
                 <h1 className="text-3xl font-semibold">Gestione Conti</h1>
                 <p className="text-slate-600">Crea, modifica o elimina conti definendo la tipologia funzionale.</p>
             </div>
 
-            <Card>
+            <Card className="w-full">
                 <CardHeader>
                     <CardTitle>{editingId ? "Modifica conto" : "Nuovo conto"}</CardTitle>
                     <CardDescription>
@@ -204,7 +204,7 @@ export default function ManageAccountsPage() {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="w-full">
                 <CardHeader>
                     <CardTitle>Conti esistenti</CardTitle>
                     <CardDescription>{loading ? "Caricamento..." : `${accounts.length} conti`}</CardDescription>

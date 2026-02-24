@@ -86,7 +86,7 @@ export default function DashboardPage() {
     const annualNetWorth = annualLiquidity + annualInvestments
 
     return (
-        <div className="space-y-6">
+        <div className="w-full max-w-none space-y-6">
 
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <h1 className="text-3xl font-semibold">Financial Overview</h1>

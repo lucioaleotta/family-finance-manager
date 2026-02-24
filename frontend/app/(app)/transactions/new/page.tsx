@@ -126,7 +126,7 @@ export default function NewTransactionPage() {
     }
 
     return (
-        <div className="max-w-3xl space-y-6">
+        <div className="space-y-6">
             <div className="space-y-1">
                 <h1 className="text-3xl font-semibold">Add Transaction</h1>
                 <p className="text-slate-600">Inserisci rapidamente entrate e uscite. Stile “fintech”, zero attrito.</p>

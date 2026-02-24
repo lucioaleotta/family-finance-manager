@@ -161,10 +161,10 @@ export default function InvestmentsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="w-full max-w-none space-y-6">
             <h1 className="text-3xl font-semibold">Investimenti</h1>
 
-            <Card>
+            <Card className="w-full">
                 <CardHeader>
                     <CardTitle>Totale automatico del mese</CardTitle>
                 </CardHeader>
@@ -184,7 +184,7 @@ export default function InvestmentsPage() {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="w-full">
                 <CardHeader>
                     <CardTitle>Snapshot mensile per conto</CardTitle>
                 </CardHeader>
@@ -239,7 +239,7 @@ export default function InvestmentsPage() {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="w-full">
                 <CardHeader>
                     <CardTitle>Ultimi 12 mesi</CardTitle>
                 </CardHeader>
