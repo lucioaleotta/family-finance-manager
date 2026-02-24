@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -29,8 +30,8 @@ public class ComputeLiquidityMonthlyTotalsUseCase {
         this.snapshotRepository = snapshotRepository;
     }
 
-    public List<CategoryMonthlyTotalView> handle(YearMonth month) {
-        List<Account> accounts = accountRepository.findByType(AccountType.LIQUIDITY);
+    public List<CategoryMonthlyTotalView> handle(UUID userId, YearMonth month) {
+        List<Account> accounts = accountRepository.findByTypeAndUserId(AccountType.LIQUIDITY, userId);
 
         Map<Currency, BigDecimal> totalsByCurrency = new HashMap<>();
         for (Account account : accounts) {

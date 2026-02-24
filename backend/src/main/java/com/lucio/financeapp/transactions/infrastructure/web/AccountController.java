@@ -9,6 +9,7 @@ import com.lucio.financeapp.transactions.domain.AccountType;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.transactions.api.AccountBalanceView;
 import com.lucio.financeapp.transactions.application.ComputeAccountBalanceUseCase;
+import com.lucio.financeapp.users.infrastructure.security.CurrentUser;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -31,24 +32,28 @@ public class AccountController {
     private final DeleteAccountUseCase deleteUseCase;
     private final ListAccountsUseCase listUseCase;
     private final ComputeAccountBalanceUseCase balanceUseCase;
+    private final CurrentUser currentUser;
 
     public AccountController(CreateAccountUseCase createUseCase,
             UpdateAccountUseCase updateUseCase,
             DeleteAccountUseCase deleteUseCase,
             ListAccountsUseCase listUseCase,
-            ComputeAccountBalanceUseCase balanceUseCase) {
+            ComputeAccountBalanceUseCase balanceUseCase,
+            CurrentUser currentUser) {
         this.createUseCase = createUseCase;
         this.updateUseCase = updateUseCase;
         this.deleteUseCase = deleteUseCase;
         this.listUseCase = listUseCase;
         this.balanceUseCase = balanceUseCase;
+        this.currentUser = currentUser;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UUID create(@Valid @RequestBody CreateAccountRequest request) {
         try {
-            return createUseCase.handle(new CreateAccountUseCase.CreateAccountCommand(
+            UUID userId = currentUser.requireUserId();
+            return createUseCase.handle(userId, new CreateAccountUseCase.CreateAccountCommand(
                     request.name(), request.type(), request.currency()));
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
@@ -57,14 +62,16 @@ public class AccountController {
 
     @GetMapping
     public List<AccountView> list(@RequestParam(value = "type", required = false) AccountType type) {
-        return type == null ? listUseCase.handle() : listUseCase.handle(type);
+        UUID userId = currentUser.requireUserId();
+        return type == null ? listUseCase.handle(userId) : listUseCase.handle(userId, type);
     }
 
     @PutMapping("/{accountId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void update(@PathVariable UUID accountId, @Valid @RequestBody UpdateAccountRequest request) {
         try {
-            updateUseCase.handle(new UpdateAccountUseCase.UpdateAccountCommand(
+            UUID userId = currentUser.requireUserId();
+            updateUseCase.handle(userId, new UpdateAccountUseCase.UpdateAccountCommand(
                     accountId, request.name(), request.type(), request.currency()));
         } catch (IllegalArgumentException ex) {
             String message = ex.getMessage();
@@ -77,7 +84,8 @@ public class AccountController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID accountId) {
         try {
-            deleteUseCase.handle(accountId);
+            UUID userId = currentUser.requireUserId();
+            deleteUseCase.handle(userId, accountId);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
         } catch (DataIntegrityViolationException ex) {
@@ -100,7 +108,8 @@ public class AccountController {
 
     @GetMapping("/{accountId}/balance")
     public AccountBalanceView balance(@PathVariable UUID accountId, @RequestParam("asOf") String asOf) {
-        return balanceUseCase.handle(accountId, LocalDate.parse(asOf));
+        UUID userId = currentUser.requireUserId();
+        return balanceUseCase.handle(userId, accountId, LocalDate.parse(asOf));
     }
 
 }

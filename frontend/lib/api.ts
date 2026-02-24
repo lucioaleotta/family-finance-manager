@@ -44,6 +44,6 @@ export async function apiDelete(path: string): Promise<void> {
 }
 
 function authHeader(): Record<string, string> {
-  const token = localStorage.getItem("auth_basic")
-  return token ? { Authorization: `Basic ${token}` } : {}
+  const token = localStorage.getItem("auth_token")
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }

@@ -25,11 +25,11 @@ public class ComputeAccountBalanceUseCase {
                 this.transactionRepository = transactionRepository;
         }
 
-        public AccountBalanceView handle(UUID accountId, LocalDate asOf) {
-                Account account = accountRepository.findById(accountId)
+        public AccountBalanceView handle(UUID userId, UUID accountId, LocalDate asOf) {
+                Account account = accountRepository.findByIdAndUserId(accountId, userId)
                                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
 
-                var txs = transactionRepository.findByAccountUpTo(accountId, asOf);
+                var txs = transactionRepository.findByAccountUpTo(accountId, userId, asOf);
 
                 // (assunzione core-banking): tutte le tx di un account devono avere stessa
                 // currency dell’account

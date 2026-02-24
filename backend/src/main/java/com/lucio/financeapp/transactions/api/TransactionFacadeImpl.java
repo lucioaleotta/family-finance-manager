@@ -21,22 +21,22 @@ class TransactionFacadeImpl implements TransactionFacade {
     }
 
     @Override
-    public List<TransactionView> findByMonth(YearMonth month) {
-        return repository.findByMonth(month).stream()
+    public List<TransactionView> findByMonth(UUID userId, YearMonth month) {
+        return repository.findByMonthAndUserId(month, userId).stream()
                 .map(TransactionFacadeImpl::toView)
                 .toList();
     }
 
     @Override
-    public List<TransactionView> findByMonthAndAccount(YearMonth month, UUID accountId) {
-        return repository.findByMonthAndAccount(month, accountId).stream()
+    public List<TransactionView> findByMonthAndAccount(UUID userId, YearMonth month, UUID accountId) {
+        return repository.findByMonthAndAccount(month, accountId, userId).stream()
                 .map(TransactionFacadeImpl::toView)
                 .toList();
     }
 
     @Override
-    public List<TransactionView> findByAccountUpTo(UUID accountId, LocalDate asOf) {
-        return repository.findByAccountUpTo(accountId, asOf).stream()
+    public List<TransactionView> findByAccountUpTo(UUID userId, UUID accountId, LocalDate asOf) {
+        return repository.findByAccountUpTo(accountId, userId, asOf).stream()
                 .map(TransactionFacadeImpl::toView)
                 .toList();
     }

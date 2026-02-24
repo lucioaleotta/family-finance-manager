@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.YearMonth;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -18,8 +19,8 @@ public class ListTransactionsByMonthUseCase {
         this.repository = repository;
     }
 
-    public List<TransactionView> handle(YearMonth month) {
-        return repository.findByMonth(month).stream()
+    public List<TransactionView> handle(UUID userId, YearMonth month) {
+        return repository.findByMonthAndUserId(month, userId).stream()
                 .map(tx -> new TransactionView(
                         tx.getId(),
                         tx.getAccountId(),

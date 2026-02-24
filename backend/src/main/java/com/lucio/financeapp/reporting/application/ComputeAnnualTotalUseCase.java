@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -19,8 +20,8 @@ public class ComputeAnnualTotalUseCase {
         this.timelineUseCase = timelineUseCase;
     }
 
-    public AnnualTotalView handle(int year) {
-        List<MonthlySummaryView> timeline = timelineUseCase.handle(year);
+        public AnnualTotalView handle(UUID userId, int year) {
+                List<MonthlySummaryView> timeline = timelineUseCase.handle(userId, year);
 
         BigDecimal totalIncome = timeline.stream()
                 .map(MonthlySummaryView::totalIncome)

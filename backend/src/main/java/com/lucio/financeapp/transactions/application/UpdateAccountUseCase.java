@@ -19,13 +19,13 @@ public class UpdateAccountUseCase {
         this.repository = repository;
     }
 
-    public void handle(UpdateAccountCommand command) {
-        Account account = repository.findById(command.id())
+    public void handle(UUID userId, UpdateAccountCommand command) {
+        Account account = repository.findByIdAndUserId(command.id(), userId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
         String name = command.name().trim();
 
-        repository.findByName(name)
+        repository.findByNameAndUserId(name, userId)
                 .filter(existing -> !existing.getId().equals(command.id()))
                 .ifPresent(existing -> {
                     throw new IllegalArgumentException("Account name already exists");

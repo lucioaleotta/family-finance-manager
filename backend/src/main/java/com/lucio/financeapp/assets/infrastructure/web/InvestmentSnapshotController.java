@@ -5,6 +5,7 @@ import com.lucio.financeapp.assets.application.UpsertInvestmentSnapshotUseCase;
 import com.lucio.financeapp.assets.application.ListLastInvestmentSnapshotsUseCase;
 import com.lucio.financeapp.assets.application.ComputeInvestmentMonthlyTotalsUseCase;
 import com.lucio.financeapp.assets.api.InvestmentSnapshotView;
+import com.lucio.financeapp.users.infrastructure.security.CurrentUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -23,19 +24,23 @@ public class InvestmentSnapshotController {
     private final UpsertInvestmentSnapshotUseCase useCase;
     private final ListLastInvestmentSnapshotsUseCase listLastUseCase;
     private final ComputeInvestmentMonthlyTotalsUseCase totalsUseCase;
+    private final CurrentUser currentUser;
 
     public InvestmentSnapshotController(UpsertInvestmentSnapshotUseCase useCase,
             ListLastInvestmentSnapshotsUseCase listLastUseCase,
-            ComputeInvestmentMonthlyTotalsUseCase totalsUseCase) {
+            ComputeInvestmentMonthlyTotalsUseCase totalsUseCase,
+            CurrentUser currentUser) {
         this.useCase = useCase;
         this.listLastUseCase = listLastUseCase;
         this.totalsUseCase = totalsUseCase;
+        this.currentUser = currentUser;
     }
 
     @PutMapping("/snapshots")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void upsert(@Valid @RequestBody UpsertRequest request) {
-        useCase.handle(new UpsertInvestmentSnapshotUseCase.Command(
+        UUID userId = currentUser.requireUserId();
+        useCase.handle(userId, new UpsertInvestmentSnapshotUseCase.Command(
                 YearMonth.parse(request.month()),
                 request.accountId(),
                 request.totalInvested(),
@@ -46,15 +51,17 @@ public class InvestmentSnapshotController {
     public List<InvestmentSnapshotView> last12(
             @RequestParam(value = "month", required = false) String month,
             @RequestParam("accountId") UUID accountId) {
+        UUID userId = currentUser.requireUserId();
         YearMonth endMonth = month == null ? null : YearMonth.parse(month);
-        return listLastUseCase.handle(endMonth, accountId);
+        return listLastUseCase.handle(userId, endMonth, accountId);
     }
 
     @GetMapping("/totals")
     public List<CategoryMonthlyTotalView> totals(
             @RequestParam(value = "month", required = false) String month) {
+        UUID userId = currentUser.requireUserId();
         YearMonth targetMonth = month == null ? YearMonth.now() : YearMonth.parse(month);
-        return totalsUseCase.handle(targetMonth);
+        return totalsUseCase.handle(userId, targetMonth);
     }
 
     record UpsertRequest(

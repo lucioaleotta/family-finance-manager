@@ -50,14 +50,14 @@ public class ComputeNetWorthReconciliationUseCase {
                 this.financeProperties = financeProperties;
         }
 
-        public List<NetWorthReconciliationView> handle(int year) {
+        public List<NetWorthReconciliationView> handle(UUID userId, int year) {
                 Currency currency = financeProperties.getBaseCurrency();
-                List<NetWorthMonthlyView> timeline = netWorthTimeline.handle(year);
+                List<NetWorthMonthlyView> timeline = netWorthTimeline.handle(userId, year);
 
                 // Net worth del mese precedente (Dec dell'anno prima) per avere delta anche a
                 // Gennaio
                 YearMonth prevMonth = YearMonth.of(year - 1, 12);
-                BigDecimal prevNetWorth = computeNetWorthAt(prevMonth, currency);
+                BigDecimal prevNetWorth = computeNetWorthAt(userId, prevMonth, currency);
 
                 final class NetWorthHolder {
                         BigDecimal value;
@@ -73,7 +73,7 @@ public class ComputeNetWorthReconciliationUseCase {
                                 .map(current -> {
                                         YearMonth month = current.month();
 
-                                        BigDecimal cashflow = computeCashflow(month); // STANDARD only, same currency
+                                        BigDecimal cashflow = computeCashflow(userId, month); // STANDARD only, same currency
                                                                                       // assumed
                                         BigDecimal netWorth = current.netWorth();
                                         BigDecimal netWorthDelta = netWorth.subtract(holder.value);
@@ -92,8 +92,8 @@ public class ComputeNetWorthReconciliationUseCase {
                                 .toList();
         }
 
-        private BigDecimal computeCashflow(YearMonth month) {
-                List<TransactionView> txs = transactionFacade.findByMonth(month);
+        private BigDecimal computeCashflow(UUID userId, YearMonth month) {
+                List<TransactionView> txs = transactionFacade.findByMonth(userId, month);
 
                 // Cashflow = solo STANDARD (esclude TRANSFER)
                 List<TransactionView> standard = txs.stream()
@@ -113,8 +113,8 @@ public class ComputeNetWorthReconciliationUseCase {
                 return income.subtract(expense);
         }
 
-        private BigDecimal computeNetWorthAt(YearMonth ym, Currency currency) {
-                List<AccountView> accounts = listAccounts.handle().stream()
+        private BigDecimal computeNetWorthAt(UUID userId, YearMonth ym, Currency currency) {
+                List<AccountView> accounts = listAccounts.handle(userId).stream()
                                 .filter(a -> a.currency() == currency)
                                 .toList();
                 Set<UUID> liquidityAccountIds = accounts.stream()

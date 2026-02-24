@@ -16,7 +16,7 @@ public class DeleteTransactionUseCase {
         this.repository = repository;
     }
 
-    public void handle(UUID id) {
-        repository.deleteById(id);
+    public void handle(UUID userId, UUID id) {
+        repository.deleteByIdAndUserId(id, userId);
     }
 }

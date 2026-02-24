@@ -7,6 +7,7 @@ import com.lucio.financeapp.transactions.application.RegisterTransactionUseCase;
 import com.lucio.financeapp.transactions.application.UpdateTransactionUseCase;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.transactions.domain.TransactionType;
+import com.lucio.financeapp.users.infrastructure.security.CurrentUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
@@ -26,38 +27,45 @@ public class TransactionController {
     private final ListTransactionsByMonthUseCase listUseCase;
     private final UpdateTransactionUseCase updateUseCase;
     private final DeleteTransactionUseCase deleteUseCase;
+    private final CurrentUser currentUser;
 
     public TransactionController(RegisterTransactionUseCase registerUseCase,
             ListTransactionsByMonthUseCase listUseCase,
             UpdateTransactionUseCase updateUseCase,
-            DeleteTransactionUseCase deleteUseCase) {
+            DeleteTransactionUseCase deleteUseCase,
+            CurrentUser currentUser) {
         this.registerUseCase = registerUseCase;
         this.listUseCase = listUseCase;
         this.updateUseCase = updateUseCase;
         this.deleteUseCase = deleteUseCase;
+        this.currentUser = currentUser;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UUID register(@Valid @RequestBody CreateOrUpdateTransactionRequest request) {
-        return registerUseCase.handle(request.toRegisterCommand());
+        UUID userId = currentUser.requireUserId();
+        return registerUseCase.handle(userId, request.toRegisterCommand());
     }
 
     @GetMapping
     public List<TransactionView> listByMonth(@RequestParam("month") String month) {
-        return listUseCase.handle(YearMonth.parse(month)); // YYYY-MM
+        UUID userId = currentUser.requireUserId();
+        return listUseCase.handle(userId, YearMonth.parse(month)); // YYYY-MM
     }
 
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void update(@PathVariable UUID id, @Valid @RequestBody CreateOrUpdateTransactionRequest request) {
-        updateUseCase.handle(id, request.toUpdateCommand());
+        UUID userId = currentUser.requireUserId();
+        updateUseCase.handle(userId, id, request.toUpdateCommand());
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID id) {
-        deleteUseCase.handle(id);
+        UUID userId = currentUser.requireUserId();
+        deleteUseCase.handle(userId, id);
     }
 
     record CreateOrUpdateTransactionRequest(

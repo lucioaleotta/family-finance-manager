@@ -30,8 +30,8 @@ public class ComputeInvestmentMonthlyTotalsUseCase {
         this.snapshotRepository = snapshotRepository;
     }
 
-    public List<CategoryMonthlyTotalView> handle(YearMonth month) {
-        List<Account> accounts = accountRepository.findByType(AccountType.INVESTMENT);
+    public List<CategoryMonthlyTotalView> handle(UUID userId, YearMonth month) {
+        List<Account> accounts = accountRepository.findByTypeAndUserId(AccountType.INVESTMENT, userId);
         List<UUID> accountIds = accounts.stream().map(Account::getId).toList();
         Map<UUID, Account> accountById = new HashMap<>();
         for (Account account : accounts) {

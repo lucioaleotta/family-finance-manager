@@ -12,13 +12,13 @@ public interface TransactionRepository {
 
     Transaction save(Transaction transaction);
 
-    List<Transaction> findByMonth(YearMonth month);
+    List<Transaction> findByMonthAndUserId(YearMonth month, UUID userId);
 
-    Optional<Transaction> findById(UUID id);
+    Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
 
-    void deleteById(UUID id);
+    void deleteByIdAndUserId(UUID id, UUID userId);
 
-    List<Transaction> findByMonthAndAccount(YearMonth month, UUID accountId);
+    List<Transaction> findByMonthAndAccount(YearMonth month, UUID accountId, UUID userId);
 
-    List<Transaction> findByAccountUpTo(UUID accountId, LocalDate asOf);
+    List<Transaction> findByAccountUpTo(UUID accountId, UUID userId, LocalDate asOf);
 }

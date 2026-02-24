@@ -14,7 +14,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     const isAuthenticated = useSyncExternalStore(
         () => () => { },
-        () => Boolean(localStorage.getItem("auth_basic")),
+        () => Boolean(localStorage.getItem("auth_token")),
         () => false
     )
 

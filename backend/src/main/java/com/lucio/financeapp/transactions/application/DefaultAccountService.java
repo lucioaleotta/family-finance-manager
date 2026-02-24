@@ -21,11 +21,11 @@ public class DefaultAccountService {
         this.accountRepository = accountRepository;
     }
 
-    public UUID getOrCreateDefaultAccountId() {
-        return accountRepository.findByName(DEFAULT_ACCOUNT_NAME)
+    public UUID getOrCreateDefaultAccountId(UUID userId, Currency currency) {
+        return accountRepository.findByNameAndUserId(DEFAULT_ACCOUNT_NAME, userId)
                 .map(Account::getId)
                 .orElseGet(() -> {
-                    Account created = Account.of(DEFAULT_ACCOUNT_NAME, AccountType.CHECKING, Currency.EUR);
+                    Account created = Account.of(userId, DEFAULT_ACCOUNT_NAME, AccountType.CHECKING, currency);
                     accountRepository.save(created);
                     return created.getId();
                 });

@@ -11,13 +11,13 @@ public interface AccountRepository {
 
     Account save(Account account);
 
-    List<Account> findAll();
+    List<Account> findAllByUserId(UUID userId);
 
-    List<Account> findByType(AccountType type);
+    List<Account> findByTypeAndUserId(AccountType type, UUID userId);
 
-    Optional<Account> findById(UUID id);
+    Optional<Account> findByIdAndUserId(UUID id, UUID userId);
 
-    Optional<Account> findByName(String name);
+    Optional<Account> findByNameAndUserId(String name, UUID userId);
 
-    void deleteById(UUID id);
+    void deleteByIdAndUserId(UUID id, UUID userId);
 }

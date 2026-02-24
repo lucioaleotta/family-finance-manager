@@ -29,35 +29,41 @@ public class JpaAccountRepository implements AccountRepository {
     }
 
     @Override
-    public List<Account> findAll() {
-        return delegate.findAll();
+    public List<Account> findAllByUserId(UUID userId) {
+        return delegate.findByUserId(userId);
     }
 
     @Override
-    public List<Account> findByType(AccountType type) {
-        return delegate.findByType(type);
-    }
-
-    @Override
-    @SuppressWarnings("null")
-    public Optional<Account> findById(UUID id) {
-        return delegate.findById(id);
-    }
-
-    @Override
-    public Optional<Account> findByName(String name) {
-        return delegate.findByName(name);
+    public List<Account> findByTypeAndUserId(AccountType type, UUID userId) {
+        return delegate.findByTypeAndUserId(type, userId);
     }
 
     @Override
     @SuppressWarnings("null")
-    public void deleteById(UUID id) {
-        delegate.deleteById(id);
+    public Optional<Account> findByIdAndUserId(UUID id, UUID userId) {
+        return delegate.findByIdAndUserId(id, userId);
+    }
+
+    @Override
+    public Optional<Account> findByNameAndUserId(String name, UUID userId) {
+        return delegate.findByNameAndUserId(name, userId);
+    }
+
+    @Override
+    @SuppressWarnings("null")
+    public void deleteByIdAndUserId(UUID id, UUID userId) {
+        delegate.deleteByIdAndUserId(id, userId);
     }
 }
 
 interface SpringDataAccountRepository extends JpaRepository<Account, UUID> {
-    Optional<Account> findByName(String name);
+    Optional<Account> findByNameAndUserId(String name, UUID userId);
 
-    List<Account> findByType(AccountType type);
+    Optional<Account> findByIdAndUserId(UUID id, UUID userId);
+
+    List<Account> findByTypeAndUserId(AccountType type, UUID userId);
+
+    List<Account> findByUserId(UUID userId);
+
+    void deleteByIdAndUserId(UUID id, UUID userId);
 }

@@ -26,8 +26,8 @@ public class UpsertLiquiditySnapshotUseCase {
         this.accountRepository = accountRepository;
     }
 
-    public void handle(Command command) {
-        Account account = accountRepository.findById(command.accountId())
+    public void handle(UUID userId, Command command) {
+        Account account = accountRepository.findByIdAndUserId(command.accountId(), userId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + command.accountId()));
         if (account.getType() != AccountType.LIQUIDITY) {
             throw new IllegalArgumentException("Account type must be LIQUIDITY");

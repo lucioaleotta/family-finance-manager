@@ -62,9 +62,21 @@ export default function RegisterPage() {
                 return
             }
 
-            // auto-login dopo registrazione
-            const token = btoa(`${trimmedUsername}:${password}`)
-            localStorage.setItem("auth_basic", token)
+            const loginResponse = await fetch("http://localhost:8080/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: trimmedUsername, password })
+            })
+
+            if (!loginResponse.ok) {
+                setSubmitError("Registrazione completata ma login non riuscito.")
+                return
+            }
+
+            const data: { accessToken: string; username: string; userId: string } = await loginResponse.json()
+            localStorage.setItem("auth_token", data.accessToken)
+            localStorage.setItem("auth_username", data.username)
+            localStorage.setItem("auth_user_id", data.userId)
 
             router.push("/dashboard")
         } catch {

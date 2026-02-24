@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,12 +52,12 @@ public class ComputeAssetsOverviewUseCase {
         this.fxRateService = fxRateService;
     }
 
-    public AssetsOverviewView handle(int year) {
+    public AssetsOverviewView handle(UUID userId, int year) {
         Currency baseCurrency = financeProperties.getBaseCurrency();
         YearMonth start = YearMonth.of(year, 1);
         YearMonth end = YearMonth.of(year, 12);
 
-        List<AccountView> accounts = listAccounts.handle();
+        List<AccountView> accounts = listAccounts.handle(userId);
         List<AccountView> liquidityAccounts = accounts.stream()
                 .filter(a -> a.type() == AccountType.LIQUIDITY)
                 .toList();

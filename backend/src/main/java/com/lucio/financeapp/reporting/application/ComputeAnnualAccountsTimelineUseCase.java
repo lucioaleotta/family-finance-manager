@@ -22,13 +22,13 @@ public class ComputeAnnualAccountsTimelineUseCase {
         this.transactionFacade = transactionFacade;
     }
 
-    public List<MonthlyAccountTimelineView> handle(int year) {
+    public List<MonthlyAccountTimelineView> handle(UUID userId, int year) {
         // month -> (accountId -> list of tx)
         Map<YearMonth, Map<UUID, List<TransactionView>>> index = new LinkedHashMap<>();
 
         for (int m = 1; m <= 12; m++) {
             YearMonth ym = YearMonth.of(year, m);
-            List<TransactionView> txs = transactionFacade.findByMonth(ym);
+            List<TransactionView> txs = transactionFacade.findByMonth(userId, ym);
 
             Map<UUID, List<TransactionView>> byAccount = txs.stream()
                     .filter(t -> t.accountId() != null)

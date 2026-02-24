@@ -46,42 +46,49 @@ public class JpaTransactionRepository implements TransactionRepository {
     }
 
     @Override
-    public List<Transaction> findByMonth(YearMonth month) {
+    public List<Transaction> findByMonthAndUserId(YearMonth month, UUID userId) {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
-        return delegate.findByDateBetweenOrderByDateDesc(start, end);
+        return delegate.findByUserIdAndDateBetweenOrderByDateDesc(userId, start, end);
     }
 
     @Override
     @SuppressWarnings("null")
-    public Optional<Transaction> findById(UUID id) {
-        return delegate.findById(id);
+    public Optional<Transaction> findByIdAndUserId(UUID id, UUID userId) {
+        return delegate.findByIdAndUserId(id, userId);
     }
 
     @Override
     @SuppressWarnings("null")
-    public void deleteById(UUID id) {
-        delegate.deleteById(id);
+    public void deleteByIdAndUserId(UUID id, UUID userId) {
+        delegate.deleteByIdAndUserId(id, userId);
     }
 
     @Override
-    public List<Transaction> findByMonthAndAccount(YearMonth month, UUID accountId) {
+    public List<Transaction> findByMonthAndAccount(YearMonth month, UUID accountId, UUID userId) {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
-        return delegate.findByAccountIdAndDateBetweenOrderByDateDescCreatedAtDesc(accountId, start, end);
+        return delegate.findByUserIdAndAccountIdAndDateBetweenOrderByDateDescCreatedAtDesc(userId, accountId, start,
+                end);
     }
 
     @Override
-    public List<Transaction> findByAccountUpTo(UUID accountId, LocalDate asOf) {
-        return delegate.findByAccountIdAndDateLessThanEqualOrderByDateDescCreatedAtDesc(accountId, asOf);
+    public List<Transaction> findByAccountUpTo(UUID accountId, UUID userId, LocalDate asOf) {
+        return delegate.findByUserIdAndAccountIdAndDateLessThanEqualOrderByDateDescCreatedAtDesc(userId, accountId,
+                asOf);
     }
 }
 
 interface SpringDataTransactionRepository extends JpaRepository<Transaction, UUID> {
-    List<Transaction> findByDateBetweenOrderByDateDesc(LocalDate start, LocalDate end);
+    List<Transaction> findByUserIdAndDateBetweenOrderByDateDesc(UUID userId, LocalDate start, LocalDate end);
 
-    List<Transaction> findByAccountIdAndDateBetweenOrderByDateDescCreatedAtDesc(UUID accountId, LocalDate start,
-            LocalDate end);
+    List<Transaction> findByUserIdAndAccountIdAndDateBetweenOrderByDateDescCreatedAtDesc(UUID userId, UUID accountId,
+            LocalDate start, LocalDate end);
 
-    List<Transaction> findByAccountIdAndDateLessThanEqualOrderByDateDescCreatedAtDesc(UUID accountId, LocalDate asOf);
+    List<Transaction> findByUserIdAndAccountIdAndDateLessThanEqualOrderByDateDescCreatedAtDesc(UUID userId,
+            UUID accountId, LocalDate asOf);
+
+    Optional<Transaction> findByIdAndUserId(UUID id, UUID userId);
+
+    void deleteByIdAndUserId(UUID id, UUID userId);
 }

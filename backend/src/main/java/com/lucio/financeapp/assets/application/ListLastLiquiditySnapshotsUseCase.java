@@ -31,8 +31,8 @@ public class ListLastLiquiditySnapshotsUseCase {
         this.accountRepository = accountRepository;
     }
 
-    public List<LiquiditySnapshotView> handle(YearMonth endMonth, UUID accountId) {
-        Account account = accountRepository.findById(accountId)
+    public List<LiquiditySnapshotView> handle(UUID userId, YearMonth endMonth, UUID accountId) {
+        Account account = accountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
         if (account.getType() != AccountType.LIQUIDITY) {
             throw new IllegalArgumentException("Account type must be LIQUIDITY");

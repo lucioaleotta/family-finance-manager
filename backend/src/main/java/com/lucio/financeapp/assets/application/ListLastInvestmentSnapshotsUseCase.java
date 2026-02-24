@@ -33,8 +33,8 @@ public class ListLastInvestmentSnapshotsUseCase {
         this.accountRepository = accountRepository;
     }
 
-    public List<InvestmentSnapshotView> handle(YearMonth endMonth, UUID accountId) {
-        Account account = accountRepository.findById(accountId)
+    public List<InvestmentSnapshotView> handle(UUID userId, YearMonth endMonth, UUID accountId) {
+        Account account = accountRepository.findByIdAndUserId(accountId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
         if (account.getType() != AccountType.INVESTMENT) {
             throw new IllegalArgumentException("Account type must be INVESTMENT");

@@ -16,10 +16,10 @@ public class DeleteAccountUseCase {
         this.repository = repository;
     }
 
-    public void handle(UUID accountId) {
-        if (repository.findById(accountId).isEmpty()) {
+    public void handle(UUID userId, UUID accountId) {
+        if (repository.findByIdAndUserId(accountId, userId).isEmpty()) {
             throw new IllegalArgumentException("Account not found: " + accountId);
         }
-        repository.deleteById(accountId);
+        repository.deleteByIdAndUserId(accountId, userId);
     }
 }
