@@ -12,7 +12,7 @@ import {
 
 import Link from "next/link"
 
-import { LayoutDashboard, ArrowRightLeft, Landmark, TrendingUp, Droplets } from "lucide-react"
+import { LayoutDashboard, ArrowRightLeft, Landmark, TrendingUp, Droplets, PiggyBank } from "lucide-react"
 
 export function AppSidebar() {
     return (
@@ -44,8 +44,18 @@ export function AppSidebar() {
                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild>
                                     <Link href="/accounts" className="flex items-center">
-                                        <Landmark className="mr-2 h-4 w-4" />
+                                        <PiggyBank className="mr-2 h-4 w-4" />
                                         Conteggi Mensili
+                                    </Link>
+                                </SidebarMenuButton>
+
+                            </SidebarMenuItem>
+
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild>
+                                    <Link href="/accounts/manage" className="flex items-center">
+                                        <Landmark className="mr-2 h-4 w-4" />
+                                        Gestione Conti
                                     </Link>
                                 </SidebarMenuButton>
 
