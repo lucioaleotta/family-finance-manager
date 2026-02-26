@@ -1,0 +1,62 @@
+name: Deploy Backend to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - backend/**
+      - .github/workflows/deploy-backend-cloud-run.yml
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REGION: ${{ vars.GCP_REGION }}
+  AR_REPOSITORY: ${{ vars.GCP_ARTIFACT_REPOSITORY }}
+  SERVICE_NAME: ${{ vars.GCP_BACKEND_SERVICE }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker Auth for Artifact Registry
+        run: gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+
+      - name: Build and Push Backend Image
+        run: |
+          IMAGE_URI="$REGION-docker.pkg.dev/$PROJECT_ID/$AR_REPOSITORY/backend"
+          docker build -f backend/Dockerfile -t "$IMAGE_URI:${GITHUB_SHA}" backend
+          docker push "$IMAGE_URI:${GITHUB_SHA}"
+          echo "IMAGE_URI=$IMAGE_URI:${GITHUB_SHA}" >> $GITHUB_ENV
+
+      - name: Deploy Backend to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE_NAME" \
+            --image "$IMAGE_URI" \
+            --region "$REGION" \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars SPRING_PROFILES_ACTIVE=prod \
+            --set-secrets SPRING_DATASOURCE_URL=SPRING_DATASOURCE_URL:latest,SPRING_DATASOURCE_USERNAME=SPRING_DATASOURCE_USERNAME:latest,SPRING_DATASOURCE_PASSWORD=SPRING_DATASOURCE_PASSWORD:latest,JWT_ISSUER=JWT_ISSUER:latest,JWT_SECRET=JWT_SECRET:latest,JWT_ACCESS_TOKEN_MINUTES=JWT_ACCESS_TOKEN_MINUTES:latest,PASSWORD_RESET_TOKEN_MINUTES=PASSWORD_RESET_TOKEN_MINUTES:latest,PASSWORD_RESET_URL=PASSWORD_RESET_URL:latest,PASSWORD_RESET_FROM_EMAIL=PASSWORD_RESET_FROM_EMAIL:latest,SPRING_MAIL_HOST=SPRING_MAIL_HOST:latest,SPRING_MAIL_PORT=SPRING_MAIL_PORT:latest,SPRING_MAIL_USERNAME=SPRING_MAIL_USERNAME:latest,SPRING_MAIL_PASSWORD=SPRING_MAIL_PASSWORD:latest,SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:latest,SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:latest
+
+      - name: Show Backend URL
+        run: |
+          URL=$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --format='value(status.url)')
+          echo "Backend deployed at: $URL"

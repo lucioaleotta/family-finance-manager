@@ -1,0 +1,61 @@
+name: Deploy Frontend to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - frontend/**
+      - .github/workflows/deploy-frontend-cloud-run.yml
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  REGION: ${{ vars.GCP_REGION }}
+  AR_REPOSITORY: ${{ vars.GCP_ARTIFACT_REPOSITORY }}
+  SERVICE_NAME: ${{ vars.GCP_FRONTEND_SERVICE }}
+  NEXT_PUBLIC_API_BASE: ${{ vars.NEXT_PUBLIC_API_BASE }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker Auth for Artifact Registry
+        run: gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+
+      - name: Build and Push Frontend Image
+        run: |
+          IMAGE_URI="$REGION-docker.pkg.dev/$PROJECT_ID/$AR_REPOSITORY/frontend"
+          docker build -f frontend/Dockerfile -t "$IMAGE_URI:${GITHUB_SHA}" --build-arg NEXT_PUBLIC_API_BASE="$NEXT_PUBLIC_API_BASE" frontend
+          docker push "$IMAGE_URI:${GITHUB_SHA}"
+          echo "IMAGE_URI=$IMAGE_URI:${GITHUB_SHA}" >> $GITHUB_ENV
+
+      - name: Deploy Frontend to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE_NAME" \
+            --image "$IMAGE_URI" \
+            --region "$REGION" \
+            --platform managed \
+            --allow-unauthenticated
+
+      - name: Show Frontend URL
+        run: |
+          URL=$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --format='value(status.url)')
+          echo "Frontend deployed at: $URL"
