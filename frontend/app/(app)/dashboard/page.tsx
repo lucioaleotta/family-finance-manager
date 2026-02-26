@@ -4,8 +4,8 @@ import * as React from "react"
 import { apiGet } from "@/lib/api"
 import { formatAmount } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { AssetsAnnualChart } from "@/components/assets-annual-chart"
+import { Wallet, Droplets, TrendingUp } from "lucide-react"
 
 type AssetsMonthlyView = {
     month: string
@@ -105,86 +105,43 @@ export default function DashboardPage() {
 
             {/* CARDS */}
 
-            <Tabs defaultValue="annual" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="annual">Annuale</TabsTrigger>
-                    <TabsTrigger value="monthly">Ultimo Mese</TabsTrigger>
-                </TabsList>
+            <div className="grid gap-6 md:grid-cols-3">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                        <CardTitle>Patrimonio</CardTitle>
+                        <Wallet className="h-5 w-5 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-2xl font-bold">
+                            {currency} {formatAmount(annualNetWorth)}
+                        </p>
+                    </CardContent>
+                </Card>
 
-                <TabsContent value="annual">
-                    <div className="grid gap-6 md:grid-cols-3">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Patrimonio</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold">
-                                    {currency} {formatAmount(annualNetWorth)}
-                                </p>
-                            </CardContent>
-                        </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                        <CardTitle>Liquidità</CardTitle>
+                        <Droplets className="h-5 w-5 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-2xl font-bold">
+                            {currency} {formatAmount(annualLiquidity)}
+                        </p>
+                    </CardContent>
+                </Card>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Liquidità</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold">
-                                    {currency} {formatAmount(annualLiquidity)}
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Investimenti</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold">
-                                    {currency} {formatAmount(annualInvestments)}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </TabsContent>
-
-                <TabsContent value="monthly">
-                    <div className="grid gap-6 md:grid-cols-3">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Patrimonio</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold">
-                                    {currency} {formatAmount(latestMonth?.netWorth ?? 0)}
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Liquidità</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold">
-                                    {currency} {formatAmount(latestMonth?.liquidity ?? 0)}
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Investimenti</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold">
-                                    {currency} {formatAmount(latestMonth?.investments ?? 0)}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </TabsContent>
-            </Tabs>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                        <CardTitle>Investimenti</CardTitle>
+                        <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-2xl font-bold">
+                            {currency} {formatAmount(annualInvestments)}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
 
             {/* CHART */}
 
