@@ -22,8 +22,8 @@ public class ComputeMonthlyAccountsUseCase {
         this.transactionFacade = transactionFacade;
     }
 
-    public List<MonthlyAccountSummaryView> handle(YearMonth month) {
-        List<TransactionView> txs = transactionFacade.findByMonth(month);
+    public List<MonthlyAccountSummaryView> handle(UUID userId, YearMonth month) {
+        List<TransactionView> txs = transactionFacade.findByMonth(userId, month);
 
         Map<UUID, List<TransactionView>> byAccount = txs.stream()
                 .filter(t -> t.accountId() != null)

@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,47 +20,58 @@ import com.lucio.financeapp.assets.domain.InvestmentSnapshot;
 import com.lucio.financeapp.assets.domain.ports.InvestmentSnapshotRepository;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.shared.domain.Money;
+import com.lucio.financeapp.transactions.domain.Account;
+import com.lucio.financeapp.transactions.domain.AccountType;
+import com.lucio.financeapp.transactions.domain.ports.AccountRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ListLastInvestmentSnapshotsUseCaseTest {
 
-    @Mock
-    private InvestmentSnapshotRepository repository;
+        @Mock
+        private InvestmentSnapshotRepository repository;
 
-    @InjectMocks
-    private ListLastInvestmentSnapshotsUseCase useCase;
+        @Mock
+        private AccountRepository accountRepository;
 
-    @Test
-    void shouldReturnLastTwelveMonthsInAscendingOrderWithZeros() {
-        YearMonth end = YearMonth.of(2026, 2);
-        YearMonth start = YearMonth.of(2025, 3);
+        @InjectMocks
+        private ListLastInvestmentSnapshotsUseCase useCase;
 
-        InvestmentSnapshot startSnapshot = InvestmentSnapshot.of(
-                start,
-                Money.of(new BigDecimal("1000.00"), Currency.EUR),
-                "start");
+        @Test
+        void shouldReturnLastTwelveMonthsInAscendingOrderWithZeros() {
+                YearMonth end = YearMonth.of(2026, 2);
+                YearMonth start = YearMonth.of(2025, 3);
+                UUID accountId = UUID.fromString("00000000-0000-0000-0000-000000000201");
+                Account account = Account.of("Broker", AccountType.INVESTMENT, Currency.EUR);
 
-        InvestmentSnapshot endSnapshot = InvestmentSnapshot.of(
-                end,
-                Money.of(new BigDecimal("2500.00"), Currency.EUR),
-                "end");
+                InvestmentSnapshot startSnapshot = InvestmentSnapshot.of(
+                                start,
+                                accountId,
+                                Money.of(new BigDecimal("1000.00"), Currency.EUR),
+                                "start");
 
-        when(repository.findByMonthBetween(start, end, Currency.EUR))
-                .thenReturn(List.of(endSnapshot, startSnapshot));
+                InvestmentSnapshot endSnapshot = InvestmentSnapshot.of(
+                                end,
+                                accountId,
+                                Money.of(new BigDecimal("2500.00"), Currency.EUR),
+                                "end");
 
-        var result = useCase.handle(end, Currency.EUR);
+                when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+                when(repository.findByMonthBetweenAndAccountId(start, end, accountId))
+                                .thenReturn(List.of(endSnapshot, startSnapshot));
 
-        assertEquals(12, result.size());
-        assertEquals(start, result.get(0).month());
-        assertEquals(new BigDecimal("1000.00"), result.get(0).totalInvested());
-        assertEquals("start", result.get(0).note());
+                var result = useCase.handle(end, accountId);
 
-        assertEquals(end, result.get(11).month());
-        assertEquals(new BigDecimal("2500.00"), result.get(11).totalInvested());
-        assertEquals("end", result.get(11).note());
+                assertEquals(12, result.size());
+                assertEquals(start, result.get(0).month());
+                assertEquals(new BigDecimal("1000.00"), result.get(0).totalInvested());
+                assertEquals("start", result.get(0).note());
 
-        var middle = result.get(5);
-        assertEquals(BigDecimal.ZERO, middle.totalInvested());
-        assertNull(middle.note());
-    }
+                assertEquals(end, result.get(11).month());
+                assertEquals(new BigDecimal("2500.00"), result.get(11).totalInvested());
+                assertEquals("end", result.get(11).note());
+
+                var middle = result.get(5);
+                assertEquals(BigDecimal.ZERO, middle.totalInvested());
+                assertNull(middle.note());
+        }
 }

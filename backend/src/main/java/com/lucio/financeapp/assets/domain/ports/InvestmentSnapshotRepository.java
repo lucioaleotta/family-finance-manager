@@ -1,20 +1,20 @@
 package com.lucio.financeapp.assets.domain.ports;
 
 import com.lucio.financeapp.assets.domain.InvestmentSnapshot;
-import com.lucio.financeapp.shared.domain.Currency;
 
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface InvestmentSnapshotRepository {
     InvestmentSnapshot save(InvestmentSnapshot snapshot);
 
-    Optional<InvestmentSnapshot> findByMonthAndCurrency(YearMonth month, Currency currency);
+    Optional<InvestmentSnapshot> findByMonthAndAccountId(YearMonth month, UUID accountId);
 
-    List<InvestmentSnapshot> findByYearAndCurrency(int year, Currency currency);
+    List<InvestmentSnapshot> findByMonthBetweenAndAccountId(YearMonth start, YearMonth end, UUID accountId);
 
-    List<InvestmentSnapshot> findByMonthBetween(YearMonth start, YearMonth end, Currency currency);
+    List<InvestmentSnapshot> findByMonthAndAccountIds(YearMonth month, List<UUID> accountIds);
 
     List<InvestmentSnapshot> findByMonthBetween(YearMonth start, YearMonth end);
 }

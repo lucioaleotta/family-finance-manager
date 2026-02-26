@@ -2,6 +2,7 @@ package com.lucio.financeapp.transactions.infrastructure.web;
 
 import com.lucio.financeapp.transactions.application.CreateTransferUseCase;
 import com.lucio.financeapp.shared.domain.Currency;
+import com.lucio.financeapp.users.infrastructure.security.CurrentUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -17,15 +18,18 @@ import java.util.UUID;
 public class TransferController {
 
     private final CreateTransferUseCase useCase;
+    private final CurrentUser currentUser;
 
-    public TransferController(CreateTransferUseCase useCase) {
+    public TransferController(CreateTransferUseCase useCase, CurrentUser currentUser) {
         this.useCase = useCase;
+        this.currentUser = currentUser;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UUID create(@Valid @RequestBody CreateTransferRequest request) {
-        return useCase.handle(new CreateTransferUseCase.CreateTransferCommand(
+        UUID userId = currentUser.requireUserId();
+        return useCase.handle(userId, new CreateTransferUseCase.CreateTransferCommand(
                 request.fromAccountId(),
                 request.toAccountId(),
                 request.amount(),

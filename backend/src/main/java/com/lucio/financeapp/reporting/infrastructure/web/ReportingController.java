@@ -13,6 +13,7 @@ import com.lucio.financeapp.reporting.api.AnnualAccountSummaryView;
 import com.lucio.financeapp.reporting.application.ComputeAnnualAccountsUseCase;
 import com.lucio.financeapp.reporting.api.MonthlyAccountTimelineView;
 import com.lucio.financeapp.reporting.application.ComputeAnnualAccountsTimelineUseCase;
+import com.lucio.financeapp.users.infrastructure.security.CurrentUser;
 
 // ...
 import java.util.List;
@@ -30,49 +31,52 @@ public class ReportingController {
     private final ComputeAnnualAccountsUseCase annualAccounts;
 
     private final ComputeAnnualAccountsTimelineUseCase annualAccountsTimeline;
+    private final CurrentUser currentUser;
 
     public ReportingController(ComputeMonthlyBalanceUseCase useCase,
             ComputeAnnualTimelineUseCase annualTimeline,
             ComputeAnnualTotalUseCase annualTotal,
             ComputeMonthlyAccountsUseCase monthlyAccounts,
             ComputeAnnualAccountsUseCase annualAccounts,
-            ComputeAnnualAccountsTimelineUseCase annualAccountsTimeline) {
+            ComputeAnnualAccountsTimelineUseCase annualAccountsTimeline,
+            CurrentUser currentUser) {
         this.useCase = useCase;
         this.annualTimeline = annualTimeline;
         this.annualTotal = annualTotal;
         this.monthlyAccounts = monthlyAccounts;
         this.annualAccounts = annualAccounts;
         this.annualAccountsTimeline = annualAccountsTimeline;
+        this.currentUser = currentUser;
     }
 
     @GetMapping("/annual/timeline")
     public List<MonthlySummaryView> annualTimeline(@RequestParam("year") int year) {
-        return annualTimeline.handle(year);
+        return annualTimeline.handle(currentUser.requireUserId(), year);
     }
 
     @GetMapping("/annual/total")
     public AnnualTotalView annualTotal(@RequestParam("year") int year) {
-        return annualTotal.handle(year);
+        return annualTotal.handle(currentUser.requireUserId(), year);
     }
 
     @GetMapping("/monthly")
     public MonthlyBalanceView monthly(@RequestParam("month") String month) {
-        return useCase.handle(YearMonth.parse(month)); // formato: YYYY-MM
+        return useCase.handle(currentUser.requireUserId(), YearMonth.parse(month)); // formato: YYYY-MM
     }
 
     @GetMapping("/monthly/accounts")
     public List<MonthlyAccountSummaryView> monthlyAccounts(@RequestParam("month") String month) {
-        return monthlyAccounts.handle(YearMonth.parse(month));
+        return monthlyAccounts.handle(currentUser.requireUserId(), YearMonth.parse(month));
     }
 
     @GetMapping("/annual/accounts")
     public List<AnnualAccountSummaryView> annualAccounts(@RequestParam("year") int year) {
-        return annualAccounts.handle(year);
+        return annualAccounts.handle(currentUser.requireUserId(), year);
     }
 
     @GetMapping("/annual/timeline/accounts")
     public List<MonthlyAccountTimelineView> annualAccountsTimeline(@RequestParam("year") int year) {
-        return annualAccountsTimeline.handle(year);
+        return annualAccountsTimeline.handle(currentUser.requireUserId(), year);
     }
 
 }

@@ -69,7 +69,7 @@ export default function TransactionsPage() {
 
     const loadData = React.useCallback(async () => {
         const [a, t] = await Promise.all([
-            apiGet<AccountView[]>("/api/accounts"),
+            apiGet<AccountView[]>("/api/accounts?type=CHECKING"),
             apiGet<TransactionView[]>(`/api/transactions?month=${month}`),
         ])
         setAccounts(a)
@@ -173,7 +173,7 @@ export default function TransactionsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="w-full max-w-none space-y-6">
             <div className="flex items-end justify-between gap-4">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-semibold">Transactions</h1>
@@ -184,7 +184,7 @@ export default function TransactionsPage() {
                 </Button>
             </div>
 
-            <Card>
+            <Card className="w-full">
                 <CardHeader>
                     <CardTitle>Month</CardTitle>
                     <CardDescription>Select a month and year</CardDescription>
@@ -194,7 +194,7 @@ export default function TransactionsPage() {
                 </CardContent>
             </Card>
 
-            <Card className="shadow-sm">
+            <Card className="w-full shadow-sm">
                 <CardHeader>
                     <CardTitle>Movimenti</CardTitle>
                     <CardDescription>{loading ? "Caricamento..." : `${txs.length} righe`}</CardDescription>

@@ -6,9 +6,9 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public interface TransactionFacade {
-    List<TransactionView> findByMonth(YearMonth month);
+    List<TransactionView> findByMonth(UUID userId, YearMonth month);
 
-    List<TransactionView> findByMonthAndAccount(YearMonth month, UUID accountId);
+    List<TransactionView> findByMonthAndAccount(UUID userId, YearMonth month, UUID accountId);
 
-    List<TransactionView> findByAccountUpTo(UUID accountId, LocalDate asOf);
+    List<TransactionView> findByAccountUpTo(UUID userId, UUID accountId, LocalDate asOf);
 }

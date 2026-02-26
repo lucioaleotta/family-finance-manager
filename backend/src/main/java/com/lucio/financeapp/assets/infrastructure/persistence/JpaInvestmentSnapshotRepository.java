@@ -2,7 +2,6 @@ package com.lucio.financeapp.assets.infrastructure.persistence;
 
 import com.lucio.financeapp.assets.domain.InvestmentSnapshot;
 import com.lucio.financeapp.assets.domain.ports.InvestmentSnapshotRepository;
-import com.lucio.financeapp.shared.domain.Currency;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -26,23 +25,23 @@ public class JpaInvestmentSnapshotRepository implements InvestmentSnapshotReposi
     }
 
     @Override
-    public Optional<InvestmentSnapshot> findByMonthAndCurrency(java.time.YearMonth month, Currency currency) {
-        return delegate.findByMonthAndCurrency(month.toString(), currency.name());
+    public Optional<InvestmentSnapshot> findByMonthAndAccountId(java.time.YearMonth month, UUID accountId) {
+        return delegate.findByMonthAndAccountId(month.toString(), accountId);
     }
 
     @Override
-    public List<InvestmentSnapshot> findByYearAndCurrency(int year, Currency currency) {
-        String start = java.time.YearMonth.of(year, 1).toString();
-        String end = java.time.YearMonth.of(year, 12).toString();
-        return delegate.findByCurrencyAndMonthBetweenOrderByMonthAsc(currency.name(), start, end);
-    }
-
-    @Override
-    public List<InvestmentSnapshot> findByMonthBetween(java.time.YearMonth start,
+    public List<InvestmentSnapshot> findByMonthBetweenAndAccountId(java.time.YearMonth start,
             java.time.YearMonth end,
-            Currency currency) {
-        return delegate.findByCurrencyAndMonthBetweenOrderByMonthAsc(currency.name(), start.toString(),
-                end.toString());
+            UUID accountId) {
+        return delegate.findByAccountIdAndMonthBetweenOrderByMonthAsc(accountId, start.toString(), end.toString());
+    }
+
+    @Override
+    public List<InvestmentSnapshot> findByMonthAndAccountIds(java.time.YearMonth month, List<UUID> accountIds) {
+        if (accountIds.isEmpty()) {
+            return List.of();
+        }
+        return delegate.findByMonthAndAccountIdIn(month.toString(), accountIds);
     }
 
     @Override
@@ -53,10 +52,12 @@ public class JpaInvestmentSnapshotRepository implements InvestmentSnapshotReposi
 }
 
 interface SpringDataInvestmentSnapshotRepository extends JpaRepository<InvestmentSnapshot, UUID> {
-    Optional<InvestmentSnapshot> findByMonthAndCurrency(String month, String currency);
+    Optional<InvestmentSnapshot> findByMonthAndAccountId(String month, UUID accountId);
 
-    List<InvestmentSnapshot> findByCurrencyAndMonthBetweenOrderByMonthAsc(String currency, String startMonth,
+    List<InvestmentSnapshot> findByAccountIdAndMonthBetweenOrderByMonthAsc(UUID accountId, String startMonth,
             String endMonth);
+
+    List<InvestmentSnapshot> findByMonthAndAccountIdIn(String month, List<UUID> accountIds);
 
     List<InvestmentSnapshot> findByMonthBetweenOrderByMonthAsc(String startMonth, String endMonth);
 }

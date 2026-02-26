@@ -1,6 +1,7 @@
 package com.lucio.financeapp.transactions.domain.ports;
 
 import com.lucio.financeapp.transactions.domain.Account;
+import com.lucio.financeapp.transactions.domain.AccountType;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,9 +11,13 @@ public interface AccountRepository {
 
     Account save(Account account);
 
-    List<Account> findAll();
+    List<Account> findAllByUserId(UUID userId);
 
-    Optional<Account> findById(UUID id);
+    List<Account> findByTypeAndUserId(AccountType type, UUID userId);
 
-    Optional<Account> findByName(String name);
+    Optional<Account> findByIdAndUserId(UUID id, UUID userId);
+
+    Optional<Account> findByNameAndUserId(String name, UUID userId);
+
+    void deleteByIdAndUserId(UUID id, UUID userId);
 }

@@ -11,16 +11,18 @@ export default function AppLayout({
   return (
     <SidebarProvider>
       <AuthGuard>
-        <div className="flex h-screen">
+        <div className="flex h-screen w-screen">
 
           <AppSidebar />
 
-          <div className="flex flex-col flex-1">
+          <div className="flex min-w-0 flex-1 flex-col">
 
             <AppHeader />
 
-            <main className="flex-1 overflow-auto p-8 bg-slate-50">
-              {children}
+            <main className="flex-1 w-full overflow-auto bg-slate-50">
+              <div className="h-full w-full px-6 py-6">
+                {children}
+              </div>
             </main>
 
           </div>

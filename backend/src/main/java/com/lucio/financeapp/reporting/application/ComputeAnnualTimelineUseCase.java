@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -23,12 +24,12 @@ public class ComputeAnnualTimelineUseCase {
         this.transactionFacade = transactionFacade;
     }
 
-    public List<MonthlySummaryView> handle(int year) {
+    public List<MonthlySummaryView> handle(UUID userId, int year) {
         List<MonthlySummaryView> result = new ArrayList<>(12);
 
         for (int m = 1; m <= 12; m++) {
             YearMonth ym = YearMonth.of(year, m);
-            List<TransactionView> txs = transactionFacade.findByMonth(ym);
+            List<TransactionView> txs = transactionFacade.findByMonth(userId, ym);
 
             var standard = txs.stream()
                     .filter(t -> t.kind() == TransactionKind.STANDARD)

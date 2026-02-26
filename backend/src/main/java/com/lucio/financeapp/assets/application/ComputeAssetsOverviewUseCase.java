@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,47 +26,50 @@ import com.lucio.financeapp.assets.domain.ports.LiquiditySnapshotRepository;
 import com.lucio.financeapp.config.FinanceProperties;
 import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.shared.infrastructure.fx.FxRateService;
-import com.lucio.financeapp.transactions.api.AccountBalanceView;
 import com.lucio.financeapp.transactions.api.AccountView;
-import com.lucio.financeapp.transactions.application.ComputeAccountBalanceUseCase;
 import com.lucio.financeapp.transactions.application.ListAccountsUseCase;
+import com.lucio.financeapp.transactions.domain.AccountType;
 
 @Service
 @Transactional(readOnly = true)
 public class ComputeAssetsOverviewUseCase {
 
     private final ListAccountsUseCase listAccounts;
-    private final ComputeAccountBalanceUseCase accountBalance;
     private final InvestmentSnapshotRepository snapshots;
     private final LiquiditySnapshotRepository liquiditySnapshots;
     private final FinanceProperties financeProperties;
     private final FxRateService fxRateService;
 
     public ComputeAssetsOverviewUseCase(ListAccountsUseCase listAccounts,
-            ComputeAccountBalanceUseCase accountBalance,
             InvestmentSnapshotRepository snapshots,
             LiquiditySnapshotRepository liquiditySnapshots,
             FinanceProperties financeProperties,
             FxRateService fxRateService) {
         this.listAccounts = listAccounts;
-        this.accountBalance = accountBalance;
         this.snapshots = snapshots;
         this.liquiditySnapshots = liquiditySnapshots;
         this.financeProperties = financeProperties;
         this.fxRateService = fxRateService;
     }
 
-    public AssetsOverviewView handle(int year) {
+    public AssetsOverviewView handle(UUID userId, int year) {
         Currency baseCurrency = financeProperties.getBaseCurrency();
         YearMonth start = YearMonth.of(year, 1);
         YearMonth end = YearMonth.of(year, 12);
 
-        List<AccountView> accounts = listAccounts.handle();
+        List<AccountView> accounts = listAccounts.handle(userId);
+        List<AccountView> liquidityAccounts = accounts.stream()
+                .filter(a -> a.type() == AccountType.LIQUIDITY)
+                .toList();
+        List<AccountView> investmentAccounts = accounts.stream()
+                .filter(a -> a.type() == AccountType.INVESTMENT)
+                .toList();
+
         List<InvestmentSnapshot> investmentSnapshotList = snapshots.findByMonthBetween(start, end);
         List<LiquiditySnapshot> liquiditySnapshotList = liquiditySnapshots.findByMonthBetween(start, end);
 
         Map<java.util.UUID, AccountView> accountsById = new HashMap<>();
-        for (AccountView account : accounts) {
+        for (AccountView account : liquidityAccounts) {
             accountsById.put(account.id(), account);
         }
 
@@ -78,18 +82,19 @@ public class ComputeAssetsOverviewUseCase {
 
         liquidityByAccount.values().forEach(list -> list.sort(Comparator.comparing(LiquiditySnapshot::getMonth)));
 
-        Map<Currency, List<InvestmentSnapshot>> snapshotsByCurrency = new HashMap<>();
+        Map<java.util.UUID, List<InvestmentSnapshot>> snapshotsByAccount = new HashMap<>();
         for (InvestmentSnapshot snapshot : investmentSnapshotList) {
-            Currency currency = snapshot.getTotalInvested().getCurrency();
-            snapshotsByCurrency.computeIfAbsent(currency, key -> new ArrayList<>()).add(snapshot);
+            if (snapshot.getAccountId() == null) {
+                continue;
+            }
+            snapshotsByAccount.computeIfAbsent(snapshot.getAccountId(), key -> new ArrayList<>()).add(snapshot);
         }
 
-        snapshotsByCurrency.values().forEach(list -> list.sort(Comparator.comparing(InvestmentSnapshot::getMonth)));
+        snapshotsByAccount.values().forEach(list -> list.sort(Comparator.comparing(InvestmentSnapshot::getMonth)));
 
         Set<Currency> currencies = new HashSet<>();
-        accounts.forEach(a -> currencies.add(a.currency()));
-        investmentSnapshotList.forEach(s -> currencies.add(s.getTotalInvested().getCurrency()));
-        liquiditySnapshotList.forEach(s -> currencies.add(s.getLiquidity().getCurrency()));
+        liquidityAccounts.forEach(a -> currencies.add(a.currency()));
+        investmentAccounts.forEach(a -> currencies.add(a.currency()));
 
         Map<Currency, BigDecimal> fxRatesToBase = new HashMap<>();
         for (Currency currency : currencies) {
@@ -100,14 +105,14 @@ public class ComputeAssetsOverviewUseCase {
 
         List<AssetsMonthlyView> monthly = new ArrayList<>(12);
         YearMonth current = start;
-        Map<Currency, BigDecimal> latestSnapshotByCurrency = new HashMap<>();
-        Map<Currency, Integer> snapshotCursorByCurrency = new HashMap<>();
+        Map<java.util.UUID, BigDecimal> latestInvestmentByAccount = new HashMap<>();
+        Map<java.util.UUID, Integer> investmentCursorByAccount = new HashMap<>();
         Map<java.util.UUID, BigDecimal> latestLiquidityByAccount = new HashMap<>();
         Map<java.util.UUID, Integer> liquidityCursorByAccount = new HashMap<>();
 
         for (int i = 0; i < 12; i++) {
             BigDecimal liquidity = BigDecimal.ZERO;
-            for (AccountView account : accounts) {
+            for (AccountView account : liquidityAccounts) {
                 List<LiquiditySnapshot> accountSnapshots = liquidityByAccount.getOrDefault(account.id(), List.of());
                 int cursor = liquidityCursorByAccount.getOrDefault(account.id(), 0);
 
@@ -122,31 +127,26 @@ public class ComputeAssetsOverviewUseCase {
                 if (snapshotLiquidity != null) {
                     liquidity = liquidity
                             .add(convert(snapshotLiquidity, account.currency(), baseCurrency, fxRatesToBase));
-                } else {
-                    AccountBalanceView balanceView = accountBalance.handle(account.id(), current.atEndOfMonth());
-                    liquidity = liquidity.add(convert(balanceView.balance(), balanceView.currency(), baseCurrency,
-                            fxRatesToBase));
                 }
             }
 
             BigDecimal investments = BigDecimal.ZERO;
-            for (Map.Entry<Currency, List<InvestmentSnapshot>> entry : snapshotsByCurrency.entrySet()) {
-                Currency currency = entry.getKey();
-                List<InvestmentSnapshot> currencySnapshots = entry.getValue();
-                int cursor = snapshotCursorByCurrency.getOrDefault(currency, 0);
+            for (AccountView account : investmentAccounts) {
+                List<InvestmentSnapshot> accountSnapshots = snapshotsByAccount.getOrDefault(account.id(), List.of());
+                int cursor = investmentCursorByAccount.getOrDefault(account.id(), 0);
 
-                while (cursor < currencySnapshots.size()
-                        && !currencySnapshots.get(cursor).getMonth().isAfter(current)) {
-                    latestSnapshotByCurrency.put(currency,
-                            currencySnapshots.get(cursor).getTotalInvested().getAmount());
+                while (cursor < accountSnapshots.size()
+                        && !accountSnapshots.get(cursor).getMonth().isAfter(current)) {
+                    latestInvestmentByAccount.put(account.id(),
+                            accountSnapshots.get(cursor).getTotalInvested().getAmount());
                     cursor++;
                 }
 
-                snapshotCursorByCurrency.put(currency, cursor);
+                investmentCursorByAccount.put(account.id(), cursor);
 
-                BigDecimal latest = latestSnapshotByCurrency.get(currency);
+                BigDecimal latest = latestInvestmentByAccount.get(account.id());
                 if (latest != null) {
-                    investments = investments.add(convert(latest, currency, baseCurrency, fxRatesToBase));
+                    investments = investments.add(convert(latest, account.currency(), baseCurrency, fxRatesToBase));
                 }
             }
 

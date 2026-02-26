@@ -1,5 +1,5 @@
 export type Currency = "EUR" | "CHF"
-export type AccountType = "CHECKING" | "CARD"
+export type AccountType = "CHECKING" | "LIQUIDITY" | "INVESTMENT" | "CARD" | "SAVINGS" | "CASH"
 
 export type AccountView = {
     id: string

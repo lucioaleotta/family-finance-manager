@@ -12,20 +12,14 @@ export function AppHeader() {
     const [username, setUsername] = React.useState<string | null>(null)
 
     React.useEffect(() => {
-        const token = localStorage.getItem("auth_basic")
-        if (token) {
-            try {
-                const decoded = atob(token)
-                const [user] = decoded.split(":")
-                setUsername(user)
-            } catch {
-                setUsername(null)
-            }
-        }
+        const user = localStorage.getItem("auth_username")
+        setUsername(user)
     }, [])
 
     function logout() {
-        localStorage.removeItem("auth_basic")
+        localStorage.removeItem("auth_token")
+        localStorage.removeItem("auth_username")
+        localStorage.removeItem("auth_user_id")
         router.replace("/login")
     }
 

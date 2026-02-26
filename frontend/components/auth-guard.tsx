@@ -1,22 +1,28 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useSyncExternalStore } from "react"
 import { useRouter } from "next/navigation"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter()
-    const [mounted, setMounted] = useState(false)
-    const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+    const mounted = useSyncExternalStore(
+        () => () => { },
+        () => true,
+        () => false
+    )
+
+    const isAuthenticated = useSyncExternalStore(
+        () => () => { },
+        () => Boolean(localStorage.getItem("auth_token")),
+        () => false
+    )
 
     useEffect(() => {
-        setMounted(true)
-        const hasAuth = Boolean(localStorage.getItem("auth_basic"))
-        setIsAuthenticated(hasAuth)
-
-        if (!hasAuth) {
+        if (mounted && !isAuthenticated) {
             router.replace("/login")
         }
-    }, [router])
+    }, [mounted, isAuthenticated, router])
 
     // Durante SSR e primo render, non renderizzare nulla per evitare hydration mismatch
     if (!mounted) {

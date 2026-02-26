@@ -23,8 +23,8 @@ public class UpdateTransactionUseCase {
 
     }
 
-    public void handle(UUID id, UpdateTransactionCommand command) {
-        Transaction tx = repository.findById(id)
+    public void handle(UUID userId, UUID id, UpdateTransactionCommand command) {
+        Transaction tx = repository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new TransactionNotFoundException(id));
 
         tx.update(command.accountId(), Money.of(command.amount(), command.currency()), command.date(), command.type(),

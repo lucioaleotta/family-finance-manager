@@ -7,8 +7,8 @@ import java.time.YearMonth;
 import java.util.UUID;
 
 @Entity
-@Table(name = "investment_snapshots", uniqueConstraints = @UniqueConstraint(name = "uk_investment_snapshot_month_currency", columnNames = {
-        "month", "currency" }))
+@Table(name = "investment_snapshots", uniqueConstraints = @UniqueConstraint(name = "uk_investment_snapshot_month_account", columnNames = {
+        "month", "account_id" }))
 public class InvestmentSnapshot {
 
     @Id
@@ -17,6 +17,9 @@ public class InvestmentSnapshot {
 
     @Column(nullable = false, length = 7) // "YYYY-MM"
     private String month;
+
+    @Column(name = "account_id")
+    private UUID accountId;
 
     @Embedded
     private Money totalInvested;
@@ -29,15 +32,16 @@ public class InvestmentSnapshot {
     protected InvestmentSnapshot() {
     }
 
-    private InvestmentSnapshot(YearMonth month, Money totalInvested, String note) {
+    private InvestmentSnapshot(YearMonth month, UUID accountId, Money totalInvested, String note) {
         this.month = month.toString();
+        this.accountId = accountId;
         this.totalInvested = totalInvested;
         this.currency = totalInvested.getCurrency().name();
         this.note = note;
     }
 
-    public static InvestmentSnapshot of(YearMonth month, Money totalInvested, String note) {
-        return new InvestmentSnapshot(month, totalInvested, note);
+    public static InvestmentSnapshot of(YearMonth month, UUID accountId, Money totalInvested, String note) {
+        return new InvestmentSnapshot(month, accountId, totalInvested, note);
     }
 
     public UUID getId() {
@@ -46,6 +50,10 @@ public class InvestmentSnapshot {
 
     public YearMonth getMonth() {
         return YearMonth.parse(month);
+    }
+
+    public UUID getAccountId() {
+        return accountId;
     }
 
     public Money getTotalInvested() {

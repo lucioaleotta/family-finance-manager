@@ -19,8 +19,8 @@ public class CreateAccountUseCase {
         this.repository = repository;
     }
 
-    public UUID handle(CreateAccountCommand command) {
-        Account account = Account.of(command.name(), command.type(), command.currency());
+    public UUID handle(UUID userId, CreateAccountCommand command) {
+        Account account = Account.of(userId, command.name(), command.type(), command.currency());
         repository.save(account);
         return account.getId();
     }

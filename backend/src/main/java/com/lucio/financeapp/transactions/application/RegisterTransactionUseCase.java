@@ -3,6 +3,7 @@ package com.lucio.financeapp.transactions.application;
 import com.lucio.financeapp.transactions.domain.Transaction;
 import com.lucio.financeapp.transactions.domain.TransactionType;
 import com.lucio.financeapp.transactions.domain.ports.TransactionRepository;
+import com.lucio.financeapp.transactions.domain.ports.AccountRepository;
 import com.lucio.financeapp.shared.domain.Money;
 import com.lucio.financeapp.shared.domain.Currency;
 import org.springframework.stereotype.Service;
@@ -18,23 +19,31 @@ public class RegisterTransactionUseCase {
 
         private final TransactionRepository repository;
         private final DefaultAccountService defaultAccountService;
+        private final AccountRepository accountRepository;
 
         public RegisterTransactionUseCase(TransactionRepository repository,
-                        DefaultAccountService defaultAccountService) {
+                        DefaultAccountService defaultAccountService,
+                        AccountRepository accountRepository) {
                 this.repository = repository;
                 this.defaultAccountService = defaultAccountService;
+                this.accountRepository = accountRepository;
         }
 
-        public UUID handle(RegisterTransactionCommand command) {
-                UUID accountId = command.accountId() != null
-                                ? command.accountId()
-                                : defaultAccountService.getOrCreateDefaultAccountId();
+        public UUID handle(UUID userId, RegisterTransactionCommand command) {
+                UUID accountId = command.accountId();
+                if (accountId != null && accountRepository.findByIdAndUserId(accountId, userId).isEmpty()) {
+                        throw new IllegalArgumentException("Account not found: " + accountId);
+                }
+                if (accountId == null) {
+                        accountId = defaultAccountService.getOrCreateDefaultAccountId(userId, command.currency());
+                }
 
                 Money money = Money.of(
                                 command.amount(),
                                 command.currency());
 
                 Transaction tx = Transaction.standard(
+                                userId,
                                 accountId,
                                 money,
                                 command.date(),

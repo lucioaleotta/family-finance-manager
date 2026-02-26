@@ -11,6 +11,7 @@ import com.lucio.financeapp.transactions.domain.TransactionKind;
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -22,8 +23,8 @@ public class ComputeMonthlyBalanceUseCase {
         this.transactionFacade = transactionFacade;
     }
 
-    public MonthlyBalanceView handle(YearMonth month) {
-        List<TransactionView> txs = transactionFacade.findByMonth(month);
+    public MonthlyBalanceView handle(UUID userId, YearMonth month) {
+        List<TransactionView> txs = transactionFacade.findByMonth(userId, month);
 
         var standard = txs.stream()
                 .filter(t -> t.kind() == TransactionKind.STANDARD)

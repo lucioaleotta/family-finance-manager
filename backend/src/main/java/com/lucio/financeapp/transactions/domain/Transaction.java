@@ -13,6 +13,9 @@ public class Transaction {
     @Id
     private UUID id;
 
+    @Column(name = "user_id")
+    private UUID userId;
+
     @Embedded
     private Money amount;
 
@@ -52,6 +55,7 @@ public class Transaction {
     }
 
     private Transaction(UUID id,
+            UUID userId,
             UUID accountId,
             Money amount,
             LocalDate date,
@@ -61,6 +65,7 @@ public class Transaction {
             TransactionKind kind,
             UUID transferId) {
         this.id = id;
+        this.userId = userId;
         this.accountId = accountId;
         this.amount = amount;
         this.date = date;
@@ -74,29 +79,35 @@ public class Transaction {
 
     }
 
-    public static Transaction standard(UUID accountId,
+    public static Transaction standard(UUID userId,
+            UUID accountId,
             Money amount,
             LocalDate date,
             TransactionType type,
             String category,
             String description) {
-        return new Transaction(UUID.randomUUID(), accountId, amount, date, type, category, description,
+        return new Transaction(UUID.randomUUID(), userId, accountId, amount, date, type, category, description,
                 TransactionKind.STANDARD, null);
     }
 
-    public static Transaction transfer(UUID accountId,
+    public static Transaction transfer(UUID userId,
+            UUID accountId,
             Money amount,
             LocalDate date,
             TransactionType type,
             String category,
             String description,
             UUID transferId) {
-        return new Transaction(UUID.randomUUID(), accountId, amount, date, type, category, description,
+        return new Transaction(UUID.randomUUID(), userId, accountId, amount, date, type, category, description,
                 TransactionKind.TRANSFER, transferId);
     }
 
     public UUID getId() {
         return id;
+    }
+
+    public UUID getUserId() {
+        return userId;
     }
 
     public Money getAmount() {

@@ -2,7 +2,11 @@ package com.lucio.financeapp.assets.application;
 
 import com.lucio.financeapp.assets.domain.InvestmentSnapshot;
 import com.lucio.financeapp.assets.domain.ports.InvestmentSnapshotRepository;
+import com.lucio.financeapp.shared.domain.Money;
 import com.lucio.financeapp.shared.domain.Currency;
+import com.lucio.financeapp.transactions.domain.Account;
+import com.lucio.financeapp.transactions.domain.AccountType;
+import com.lucio.financeapp.transactions.domain.ports.AccountRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -14,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,6 +30,9 @@ class UpsertInvestmentSnapshotUseCaseTest {
     @Mock
     private InvestmentSnapshotRepository repository;
 
+    @Mock
+    private AccountRepository accountRepository;
+
     @InjectMocks
     private UpsertInvestmentSnapshotUseCase useCase;
 
@@ -34,13 +42,17 @@ class UpsertInvestmentSnapshotUseCaseTest {
     @Test
     void shouldCreateSnapshotWhenNotExists() {
         YearMonth month = YearMonth.of(2026, 2);
-        when(repository.findByMonthAndCurrency(month, Currency.EUR)).thenReturn(Optional.empty());
+        UUID accountId = UUID.fromString("00000000-0000-0000-0000-000000000101");
+        Account account = Account.of("Investimenti", AccountType.INVESTMENT, Currency.EUR);
+
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(repository.findByMonthAndAccountId(month, accountId)).thenReturn(Optional.empty());
         when(repository.save(any(InvestmentSnapshot.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         useCase.handle(new UpsertInvestmentSnapshotUseCase.Command(
                 month,
+                accountId,
                 new BigDecimal("15000.00"),
-                Currency.EUR,
                 "PAC"));
 
         verify(repository).save(snapshotCaptor.capture());
@@ -54,17 +66,21 @@ class UpsertInvestmentSnapshotUseCaseTest {
     @Test
     void shouldUpdateExistingSnapshot() {
         YearMonth month = YearMonth.of(2026, 2);
+        UUID accountId = UUID.fromString("00000000-0000-0000-0000-000000000102");
+        Account account = Account.of("Investimenti", AccountType.INVESTMENT, Currency.EUR);
         InvestmentSnapshot existing = InvestmentSnapshot.of(month,
-                com.lucio.financeapp.shared.domain.Money.of(new BigDecimal("10000.00"), Currency.EUR),
+                accountId,
+                Money.of(new BigDecimal("10000.00"), Currency.EUR),
                 "old");
 
-        when(repository.findByMonthAndCurrency(month, Currency.EUR)).thenReturn(Optional.of(existing));
+        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(repository.findByMonthAndAccountId(month, accountId)).thenReturn(Optional.of(existing));
         when(repository.save(any(InvestmentSnapshot.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         useCase.handle(new UpsertInvestmentSnapshotUseCase.Command(
                 month,
+                accountId,
                 new BigDecimal("20000.00"),
-                Currency.EUR,
                 "new"));
 
         verify(repository).save(snapshotCaptor.capture());

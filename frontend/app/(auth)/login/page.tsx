@@ -19,10 +19,29 @@ export default function LoginPage() {
 
         setIsSubmitting(true)
 
-        const token = btoa(`${username}:${password}`)
-        localStorage.setItem("auth_basic", token)
+        ; (async () => {
+            try {
+                const response = await fetch("http://localhost:8080/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: username.trim(), password })
+                })
 
-        router.push("/dashboard")
+                if (!response.ok) {
+                    setIsSubmitting(false)
+                    return
+                }
+
+                const data: { accessToken: string; username: string; userId: string } = await response.json()
+                localStorage.setItem("auth_token", data.accessToken)
+                localStorage.setItem("auth_username", data.username)
+                localStorage.setItem("auth_user_id", data.userId)
+
+                router.push("/dashboard")
+            } catch {
+                setIsSubmitting(false)
+            }
+        })()
     }
 
     return (

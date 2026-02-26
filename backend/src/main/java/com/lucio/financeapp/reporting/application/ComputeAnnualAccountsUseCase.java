@@ -22,11 +22,11 @@ public class ComputeAnnualAccountsUseCase {
         this.transactionFacade = transactionFacade;
     }
 
-    public List<AnnualAccountSummaryView> handle(int year) {
+    public List<AnnualAccountSummaryView> handle(UUID userId, int year) {
         List<TransactionView> all = new ArrayList<>();
 
         for (int m = 1; m <= 12; m++) {
-            all.addAll(transactionFacade.findByMonth(YearMonth.of(year, m)));
+            all.addAll(transactionFacade.findByMonth(userId, YearMonth.of(year, m)));
         }
 
         Map<UUID, List<TransactionView>> byAccount = all.stream()
