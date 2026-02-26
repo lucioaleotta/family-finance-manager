@@ -1,0 +1,9 @@
+security:
+  jwt:
+    issuer: ${JWT_ISSUER}
+    secret: ${JWT_SECRET}
+    access-token-minutes: ${JWT_ACCESS_TOKEN_MINUTES}
+  password-reset:
+    token-minutes: ${PASSWORD_RESET_TOKEN_MINUTES}
+    reset-url: ${PASSWORD_RESET_URL}
+    from-email: ${PASSWORD_RESET_FROM_EMAIL}

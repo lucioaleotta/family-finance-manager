@@ -29,6 +29,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ComputeNetWorthTimelineUseCaseTest {
 
+        private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000e300");
+
         @Mock
         private ListAccountsUseCase listAccounts;
 
@@ -50,9 +52,9 @@ class ComputeNetWorthTimelineUseCaseTest {
                 UUID investmentAccount = UUID.fromString("00000000-0000-0000-0000-000000000002");
                 UUID chfAccount = UUID.fromString("00000000-0000-0000-0000-000000000003");
 
-                when(financeProperties.getBaseCurrency()).thenReturn(Currency.EUR);
+                when(financeProperties.getBaseCurrency()).thenReturn("EUR");
 
-                when(listAccounts.handle()).thenReturn(List.of(
+                when(listAccounts.handle(USER_ID)).thenReturn(List.of(
                                 new AccountView(liquidityAccount, "Fineco", AccountType.LIQUIDITY, Currency.EUR),
                                 new AccountView(investmentAccount, "Broker", AccountType.INVESTMENT, Currency.EUR),
                                 new AccountView(chfAccount, "CHF", AccountType.CHECKING, Currency.CHF)));
@@ -81,7 +83,7 @@ class ComputeNetWorthTimelineUseCaseTest {
                                         return List.of();
                                 });
 
-                var result = useCase.handle(2026);
+                var result = useCase.handle(USER_ID, 2026);
 
                 assertEquals(12, result.size());
 

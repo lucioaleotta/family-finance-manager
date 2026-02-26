@@ -40,9 +40,10 @@ class RegisterUserUseCaseTest {
 
     @Test
     void shouldRegisterUserWithDefaultCurrencyWhenNotProvided() {
-        RegisterRequest request = new RegisterRequest("lucio", "StrongPass1", null);
+        RegisterRequest request = new RegisterRequest("lucio", "lucio@example.com", "StrongPass1", null);
 
         when(repo.findByUsername("lucio")).thenReturn(Optional.empty());
+        when(repo.findByEmail("lucio@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("StrongPass1")).thenReturn("encoded-password");
         when(repo.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -52,15 +53,17 @@ class RegisterUserUseCaseTest {
         User saved = userCaptor.getValue();
 
         assertEquals("lucio", saved.getUsername());
+        assertEquals("lucio@example.com", saved.getEmail());
         assertEquals("encoded-password", saved.getPasswordHash());
         assertEquals("EUR", saved.getBaseCurrency());
     }
 
     @Test
     void shouldRejectDuplicateUsername() {
-        RegisterRequest request = new RegisterRequest("lucio", "StrongPass1", "CHF");
+        RegisterRequest request = new RegisterRequest("lucio", "lucio@example.com", "StrongPass1", "CHF");
         when(repo.findByUsername("lucio"))
-                .thenReturn(Optional.of(new User(UUID.randomUUID(), "lucio", "existing-hash", "CHF")));
+                .thenReturn(Optional
+                        .of(new User(UUID.randomUUID(), "lucio", "lucio-old@example.com", "existing-hash", "CHF")));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> useCase.handle(request));
 
@@ -71,11 +74,26 @@ class RegisterUserUseCaseTest {
 
     @Test
     void shouldRejectWeakPassword() {
-        RegisterRequest request = new RegisterRequest("lucio", "weak", "EUR");
+        RegisterRequest request = new RegisterRequest("lucio", "lucio@example.com", "weak", "EUR");
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> useCase.handle(request));
 
         assertEquals("password is too weak", ex.getMessage());
+        verify(passwordEncoder, never()).encode(any(String.class));
+        verify(repo, never()).save(any(User.class));
+    }
+
+    @Test
+    void shouldRejectDuplicateEmail() {
+        RegisterRequest request = new RegisterRequest("lucio", "lucio@example.com", "StrongPass1", "EUR");
+        when(repo.findByUsername("lucio")).thenReturn(Optional.empty());
+        when(repo.findByEmail("lucio@example.com"))
+                .thenReturn(Optional
+                        .of(new User(UUID.randomUUID(), "another", "lucio@example.com", "existing-hash", "EUR")));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> useCase.handle(request));
+
+        assertEquals("Email already exists", ex.getMessage());
         verify(passwordEncoder, never()).encode(any(String.class));
         verify(repo, never()).save(any(User.class));
     }

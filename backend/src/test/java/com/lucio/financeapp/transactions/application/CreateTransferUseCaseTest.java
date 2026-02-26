@@ -4,7 +4,10 @@ import com.lucio.financeapp.shared.domain.Currency;
 import com.lucio.financeapp.transactions.domain.Transaction;
 import com.lucio.financeapp.transactions.domain.TransactionKind;
 import com.lucio.financeapp.transactions.domain.TransactionType;
+import com.lucio.financeapp.transactions.domain.Account;
+import com.lucio.financeapp.transactions.domain.AccountType;
 import com.lucio.financeapp.transactions.domain.ports.TransactionRepository;
+import com.lucio.financeapp.transactions.domain.ports.AccountRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -25,8 +28,13 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CreateTransferUseCaseTest {
 
+    private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000c100");
+
     @Mock
     private TransactionRepository repository;
+
+    @Mock
+    private AccountRepository accountRepository;
 
     @InjectMocks
     private CreateTransferUseCase useCase;
@@ -39,9 +47,14 @@ class CreateTransferUseCaseTest {
         UUID fromAccountId = UUID.randomUUID();
         UUID toAccountId = UUID.randomUUID();
 
+        when(accountRepository.findByIdAndUserId(fromAccountId, USER_ID))
+                .thenReturn(java.util.Optional.of(Account.of(USER_ID, "From", AccountType.CHECKING, Currency.EUR)));
+        when(accountRepository.findByIdAndUserId(toAccountId, USER_ID))
+                .thenReturn(java.util.Optional.of(Account.of(USER_ID, "To", AccountType.CHECKING, Currency.EUR)));
+
         when(repository.save(any(Transaction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        UUID transferId = useCase.handle(new CreateTransferUseCase.CreateTransferCommand(
+        UUID transferId = useCase.handle(USER_ID, new CreateTransferUseCase.CreateTransferCommand(
                 fromAccountId,
                 toAccountId,
                 new BigDecimal("10.00"),

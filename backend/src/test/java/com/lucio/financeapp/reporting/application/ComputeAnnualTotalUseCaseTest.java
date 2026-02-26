@@ -10,12 +10,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ComputeAnnualTotalUseCaseTest {
+
+    private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000d300");
 
     @Mock
     private ComputeAnnualTimelineUseCase timelineUseCase;
@@ -25,14 +28,14 @@ class ComputeAnnualTotalUseCaseTest {
 
     @Test
     void shouldComputeYearlyTotalsAndAverageOnMonthsWithData() {
-        when(timelineUseCase.handle(2026)).thenReturn(List.of(
+        when(timelineUseCase.handle(USER_ID, 2026)).thenReturn(List.of(
                 new MonthlySummaryView(YearMonth.of(2026, 1), new BigDecimal("100.00"), new BigDecimal("20.00"),
                         new BigDecimal("80.00")),
                 new MonthlySummaryView(YearMonth.of(2026, 2), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO),
                 new MonthlySummaryView(YearMonth.of(2026, 3), new BigDecimal("50.00"), new BigDecimal("70.00"),
                         new BigDecimal("-20.00"))));
 
-        var result = useCase.handle(2026);
+        var result = useCase.handle(USER_ID, 2026);
 
         assertEquals(new BigDecimal("150.00"), result.totalIncome());
         assertEquals(new BigDecimal("90.00"), result.totalExpense());
@@ -43,10 +46,10 @@ class ComputeAnnualTotalUseCaseTest {
 
     @Test
     void shouldReturnZeroAverageWhenNoData() {
-        when(timelineUseCase.handle(2027)).thenReturn(List.of(
+        when(timelineUseCase.handle(USER_ID, 2027)).thenReturn(List.of(
                 new MonthlySummaryView(YearMonth.of(2027, 1), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)));
 
-        var result = useCase.handle(2027);
+        var result = useCase.handle(USER_ID, 2027);
 
         assertEquals(0, result.monthsWithData());
         assertEquals(BigDecimal.ZERO, result.avgMonthlySavings());

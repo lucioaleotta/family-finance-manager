@@ -27,6 +27,17 @@ log_warn() {
     echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
+docker_compose() {
+    if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+        docker compose "$@"
+    elif command -v docker-compose >/dev/null 2>&1; then
+        docker-compose "$@"
+    else
+        log_error "Docker Compose non trovato. Installa Docker Desktop o docker-compose."
+        return 127
+    fi
+}
+
 # Funzione per mostrare l'help
 show_help() {
     cat << EOF
@@ -36,6 +47,7 @@ Usage: ./dev.sh [COMMAND] [OPTIONS]
 
 Commands:
   up                Start all services (database, backend, frontend)
+    up-prod           Start all services with backend profile prod
   down              Stop all services
   restart           Restart all services
   status            Show status of all services
@@ -47,6 +59,7 @@ Commands:
   db-logs           Show database logs
   
   backend-start     Start backend only
+    backend-start-prod Start backend only with profile prod
   backend-stop      Stop backend only
   backend-restart   Restart backend only
   backend-logs      Show backend logs
@@ -61,6 +74,7 @@ Commands:
 
 Examples:
   ./dev.sh up                    # Start all services
+    ./dev.sh up-prod               # Start all services with backend prod profile
   ./dev.sh db-restart            # Restart only database
   ./dev.sh backend-build         # Build backend
   ./dev.sh frontend-logs         # Show frontend logs
@@ -71,7 +85,7 @@ EOF
 start_database() {
     log_info "Starting database..."
     cd "$DOCKER_DIR"
-    docker-compose -f postgres.yml up -d
+    docker_compose -f postgres.yml up -d
     sleep 3
     log_info "Database started ✓"
 }
@@ -79,7 +93,7 @@ start_database() {
 stop_database() {
     log_info "Stopping database..."
     cd "$DOCKER_DIR"
-    docker-compose -f postgres.yml down
+    docker_compose -f postgres.yml down
     log_info "Database stopped ✓"
 }
 
@@ -91,7 +105,7 @@ restart_database() {
 
 db_logs() {
     cd "$DOCKER_DIR"
-    docker-compose -f postgres.yml logs -f
+    docker_compose -f postgres.yml logs -f
 }
 
 # Backend functions
@@ -101,6 +115,36 @@ start_backend() {
     mvn spring-boot:run -DskipTests > /dev/null 2>&1 &
     sleep 10
     log_info "Backend started on http://localhost:8080 ✓"
+}
+
+start_backend_prod() {
+    local required_vars=(
+        "JWT_ISSUER"
+        "JWT_SECRET"
+        "JWT_ACCESS_TOKEN_MINUTES"
+        "PASSWORD_RESET_TOKEN_MINUTES"
+        "PASSWORD_RESET_URL"
+        "PASSWORD_RESET_FROM_EMAIL"
+    )
+
+    local missing=0
+    for var_name in "${required_vars[@]}"; do
+        if [[ -z "${!var_name:-}" ]]; then
+            log_error "Missing required env var for prod profile: $var_name"
+            missing=1
+        fi
+    done
+
+    if [[ "$missing" -eq 1 ]]; then
+        log_warn "Example: SPRING_PROFILES_ACTIVE=prod JWT_ISSUER=... JWT_SECRET=... ./scripts/dev.sh up-prod"
+        return 1
+    fi
+
+    log_info "Starting backend with prod profile..."
+    cd "$BACKEND_DIR"
+    SPRING_PROFILES_ACTIVE=prod mvn spring-boot:run -DskipTests > /dev/null 2>&1 &
+    sleep 10
+    log_info "Backend (prod profile) started on http://localhost:8080 ✓"
 }
 
 stop_backend() {
@@ -163,6 +207,15 @@ start_all() {
     show_status
 }
 
+start_all_prod() {
+    log_info "Starting all services (backend prod profile)..."
+    start_database
+    start_backend_prod
+    start_frontend
+    log_info "All services started (backend prod profile) ✓"
+    show_status
+}
+
 stop_all() {
     log_info "Stopping all services..."
     stop_frontend
@@ -182,7 +235,7 @@ show_status() {
     
     # Database
     cd "$DOCKER_DIR"
-    if docker-compose -f postgres.yml ps 2>/dev/null | grep -q "Up"; then
+    if docker_compose -f postgres.yml ps 2>/dev/null | grep -q "Up"; then
         echo -e "Database:  ${GREEN}✓ Running${NC}"
     else
         echo -e "Database:  ${RED}✗ Stopped${NC}"
@@ -219,6 +272,9 @@ case "$COMMAND" in
     up)
         start_all
         ;;
+    up-prod)
+        start_all_prod
+        ;;
     down)
         stop_all
         ;;
@@ -245,6 +301,9 @@ case "$COMMAND" in
         ;;
     backend-start)
         start_backend
+        ;;
+    backend-start-prod)
+        start_backend_prod
         ;;
     backend-stop)
         stop_backend

@@ -24,13 +24,14 @@ class SpringDataUserRepositoryTest {
 
     @Test
     void findByUsernameReturnsUserWhenPresent() {
-        User user = new User(UUID.randomUUID(), "anna", "hash-1", "EUR");
+        User user = new User(UUID.randomUUID(), "anna", "anna@example.com", "hash-1", "EUR");
         repository.save(user);
 
         Optional<User> found = repository.findByUsername("anna");
 
         assertThat(found).isPresent();
         assertThat(found.get().getUsername()).isEqualTo("anna");
+        assertThat(found.get().getEmail()).isEqualTo("anna@example.com");
         assertThat(found.get().getBaseCurrency()).isEqualTo("EUR");
     }
 
@@ -39,5 +40,16 @@ class SpringDataUserRepositoryTest {
         Optional<User> found = repository.findByUsername("missing-user");
 
         assertThat(found).isEmpty();
+    }
+
+    @Test
+    void findByEmailIgnoreCaseReturnsUserWhenPresent() {
+        User user = new User(UUID.randomUUID(), "mario", "mario@example.com", "hash-2", "CHF");
+        repository.save(user);
+
+        Optional<User> found = repository.findByEmailIgnoreCase("MARIO@EXAMPLE.COM");
+
+        assertThat(found).isPresent();
+        assertThat(found.get().getUsername()).isEqualTo("mario");
     }
 }

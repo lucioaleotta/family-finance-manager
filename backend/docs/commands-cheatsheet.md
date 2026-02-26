@@ -188,6 +188,45 @@ Dalla cartella `backend`:
 
 Nota: i comandi Docker richiedono Docker Desktop/daemon attivo.
 
+## Mini-guida `scripts/dev.sh` (root progetto)
+Script: `scripts/dev.sh`
+
+Dalla root del progetto:
+
+- Avvio standard (profilo backend `dev`):
+  ```bash
+  ./scripts/dev.sh up
+  ```
+- Avvio con backend in profilo `prod`:
+  ```bash
+  ./scripts/dev.sh up-prod
+  ```
+- Avvio solo backend con profilo `prod`:
+  ```bash
+  ./scripts/dev.sh backend-start-prod
+  ```
+
+Variabili richieste per i comandi `prod`:
+
+- `JWT_ISSUER`
+- `JWT_SECRET`
+- `JWT_ACCESS_TOKEN_MINUTES`
+- `PASSWORD_RESET_TOKEN_MINUTES`
+- `PASSWORD_RESET_URL`
+- `PASSWORD_RESET_FROM_EMAIL`
+
+Esempio rapido:
+
+```bash
+JWT_ISSUER=financeapp \
+JWT_SECRET=change_me_with_strong_secret \
+JWT_ACCESS_TOKEN_MINUTES=60 \
+PASSWORD_RESET_TOKEN_MINUTES=30 \
+PASSWORD_RESET_URL=https://app.example.com/reset-password \
+PASSWORD_RESET_FROM_EMAIL=no-reply@example.com \
+./scripts/dev.sh up-prod
+```
+
 ## Mini-guida `api-curl-tests.sh`
 Script: `backend/scripts/api-curl-tests.sh`
 
@@ -220,3 +259,61 @@ Variabili supportate:
 - `CLEANUP` (default: `false`; se `true` elimina le transazioni create nel run)
 
 Nota: lo script crea account, transazione e transfer di test; di default mantiene i dati per ispezione.
+
+## Password Reset: configurazione e invio email
+
+### Dove è implementato
+- Generazione token + link + invio:
+  - `backend/src/main/java/com/lucio/financeapp/users/application/RequestPasswordResetUseCase.java`
+- Invio email (notifier):
+  - `backend/src/main/java/com/lucio/financeapp/users/infrastructure/notifications/EmailPasswordResetNotifier.java`
+- Proprietà:
+  - `backend/src/main/java/com/lucio/financeapp/users/infrastructure/config/PasswordResetProperties.java`
+
+### Proprietà applicative
+Configurate con prefisso `security.password-reset`:
+
+- `token-minutes`
+- `reset-url`
+- `from-email`
+
+File usati:
+
+- `backend/src/main/resources/application.yml` (profilo default: `dev`)
+- `backend/src/main/resources/application-dev.yml`
+- `backend/src/main/resources/application-prod.yml`
+
+In produzione i valori sono richiesti via env:
+
+- `JWT_ISSUER`
+- `JWT_SECRET`
+- `JWT_ACCESS_TOKEN_MINUTES`
+- `PASSWORD_RESET_TOKEN_MINUTES`
+- `PASSWORD_RESET_URL`
+- `PASSWORD_RESET_FROM_EMAIL`
+
+### SMTP reale (invio email vero)
+È presente `spring-boot-starter-mail`, ma devi configurare `spring.mail.*`.
+
+Esempio (da mettere in `application-prod.yml` o variabili ambiente):
+
+```yaml
+spring:
+  mail:
+    host: smtp.tuo-provider.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+```
+
+Env consigliate:
+
+- `MAIL_USERNAME`
+- `MAIL_PASSWORD`
+
+### Comportamento fallback
+Se `JavaMailSender` non è disponibile, il sistema **non fallisce**: logga il link di reset nei log backend.
+Utile in locale durante sviluppo/test.

@@ -24,55 +24,57 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ComputeMonthlyBalanceUseCaseTest {
 
-    @Mock
-    private TransactionFacade transactionFacade;
+        private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000d100");
 
-    @InjectMocks
-    private ComputeMonthlyBalanceUseCase useCase;
+        @Mock
+        private TransactionFacade transactionFacade;
 
-    @Test
-    void shouldComputeBalanceUsingOnlyStandardTransactions() {
-        YearMonth month = YearMonth.of(2026, 2);
+        @InjectMocks
+        private ComputeMonthlyBalanceUseCase useCase;
 
-        TransactionView income = new TransactionView(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                Money.of(new BigDecimal("1000.00"), Currency.EUR),
-                LocalDate.of(2026, 2, 1),
-                TransactionType.INCOME,
-                "SALARY",
-                "Salary",
-                TransactionKind.STANDARD,
-                null);
+        @Test
+        void shouldComputeBalanceUsingOnlyStandardTransactions() {
+                YearMonth month = YearMonth.of(2026, 2);
 
-        TransactionView expense = new TransactionView(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                Money.of(new BigDecimal("200.00"), Currency.EUR),
-                LocalDate.of(2026, 2, 2),
-                TransactionType.EXPENSE,
-                "GROCERIES",
-                "Food",
-                TransactionKind.STANDARD,
-                null);
+                TransactionView income = new TransactionView(
+                                UUID.randomUUID(),
+                                UUID.randomUUID(),
+                                Money.of(new BigDecimal("1000.00"), Currency.EUR),
+                                LocalDate.of(2026, 2, 1),
+                                TransactionType.INCOME,
+                                "SALARY",
+                                "Salary",
+                                TransactionKind.STANDARD,
+                                null);
 
-        TransactionView transfer = new TransactionView(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                Money.of(new BigDecimal("500.00"), Currency.EUR),
-                LocalDate.of(2026, 2, 3),
-                TransactionType.EXPENSE,
-                "Transfer",
-                "Transfer",
-                TransactionKind.TRANSFER,
-                UUID.randomUUID());
+                TransactionView expense = new TransactionView(
+                                UUID.randomUUID(),
+                                UUID.randomUUID(),
+                                Money.of(new BigDecimal("200.00"), Currency.EUR),
+                                LocalDate.of(2026, 2, 2),
+                                TransactionType.EXPENSE,
+                                "GROCERIES",
+                                "Food",
+                                TransactionKind.STANDARD,
+                                null);
 
-        when(transactionFacade.findByMonth(month)).thenReturn(List.of(income, expense, transfer));
+                TransactionView transfer = new TransactionView(
+                                UUID.randomUUID(),
+                                UUID.randomUUID(),
+                                Money.of(new BigDecimal("500.00"), Currency.EUR),
+                                LocalDate.of(2026, 2, 3),
+                                TransactionType.EXPENSE,
+                                "Transfer",
+                                "Transfer",
+                                TransactionKind.TRANSFER,
+                                UUID.randomUUID());
 
-        var result = useCase.handle(month);
+                when(transactionFacade.findByMonth(USER_ID, month)).thenReturn(List.of(income, expense, transfer));
 
-        assertEquals(new BigDecimal("1000.00"), result.totalIncome());
-        assertEquals(new BigDecimal("200.00"), result.totalExpense());
-        assertEquals(new BigDecimal("800.00"), result.savings());
-    }
+                var result = useCase.handle(USER_ID, month);
+
+                assertEquals(new BigDecimal("1000.00"), result.totalIncome());
+                assertEquals(new BigDecimal("200.00"), result.totalExpense());
+                assertEquals(new BigDecimal("800.00"), result.savings());
+        }
 }

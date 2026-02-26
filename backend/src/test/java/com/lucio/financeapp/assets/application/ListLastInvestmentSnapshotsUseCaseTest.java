@@ -27,6 +27,8 @@ import com.lucio.financeapp.transactions.domain.ports.AccountRepository;
 @ExtendWith(MockitoExtension.class)
 class ListLastInvestmentSnapshotsUseCaseTest {
 
+        private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000e200");
+
         @Mock
         private InvestmentSnapshotRepository repository;
 
@@ -41,7 +43,7 @@ class ListLastInvestmentSnapshotsUseCaseTest {
                 YearMonth end = YearMonth.of(2026, 2);
                 YearMonth start = YearMonth.of(2025, 3);
                 UUID accountId = UUID.fromString("00000000-0000-0000-0000-000000000201");
-                Account account = Account.of("Broker", AccountType.INVESTMENT, Currency.EUR);
+                Account account = Account.of(USER_ID, "Broker", AccountType.INVESTMENT, Currency.EUR);
 
                 InvestmentSnapshot startSnapshot = InvestmentSnapshot.of(
                                 start,
@@ -55,11 +57,11 @@ class ListLastInvestmentSnapshotsUseCaseTest {
                                 Money.of(new BigDecimal("2500.00"), Currency.EUR),
                                 "end");
 
-                when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+                when(accountRepository.findByIdAndUserId(accountId, USER_ID)).thenReturn(Optional.of(account));
                 when(repository.findByMonthBetweenAndAccountId(start, end, accountId))
                                 .thenReturn(List.of(endSnapshot, startSnapshot));
 
-                var result = useCase.handle(end, accountId);
+                var result = useCase.handle(USER_ID, end, accountId);
 
                 assertEquals(12, result.size());
                 assertEquals(start, result.get(0).month());

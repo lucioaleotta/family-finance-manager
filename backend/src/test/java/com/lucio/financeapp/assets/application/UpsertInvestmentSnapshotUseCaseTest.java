@@ -27,6 +27,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UpsertInvestmentSnapshotUseCaseTest {
 
+    private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000e100");
+
     @Mock
     private InvestmentSnapshotRepository repository;
 
@@ -43,13 +45,13 @@ class UpsertInvestmentSnapshotUseCaseTest {
     void shouldCreateSnapshotWhenNotExists() {
         YearMonth month = YearMonth.of(2026, 2);
         UUID accountId = UUID.fromString("00000000-0000-0000-0000-000000000101");
-        Account account = Account.of("Investimenti", AccountType.INVESTMENT, Currency.EUR);
+        Account account = Account.of(USER_ID, "Investimenti", AccountType.INVESTMENT, Currency.EUR);
 
-        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(accountRepository.findByIdAndUserId(accountId, USER_ID)).thenReturn(Optional.of(account));
         when(repository.findByMonthAndAccountId(month, accountId)).thenReturn(Optional.empty());
         when(repository.save(any(InvestmentSnapshot.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        useCase.handle(new UpsertInvestmentSnapshotUseCase.Command(
+        useCase.handle(USER_ID, new UpsertInvestmentSnapshotUseCase.Command(
                 month,
                 accountId,
                 new BigDecimal("15000.00"),
@@ -67,17 +69,17 @@ class UpsertInvestmentSnapshotUseCaseTest {
     void shouldUpdateExistingSnapshot() {
         YearMonth month = YearMonth.of(2026, 2);
         UUID accountId = UUID.fromString("00000000-0000-0000-0000-000000000102");
-        Account account = Account.of("Investimenti", AccountType.INVESTMENT, Currency.EUR);
+        Account account = Account.of(USER_ID, "Investimenti", AccountType.INVESTMENT, Currency.EUR);
         InvestmentSnapshot existing = InvestmentSnapshot.of(month,
                 accountId,
                 Money.of(new BigDecimal("10000.00"), Currency.EUR),
                 "old");
 
-        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(accountRepository.findByIdAndUserId(accountId, USER_ID)).thenReturn(Optional.of(account));
         when(repository.findByMonthAndAccountId(month, accountId)).thenReturn(Optional.of(existing));
         when(repository.save(any(InvestmentSnapshot.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        useCase.handle(new UpsertInvestmentSnapshotUseCase.Command(
+        useCase.handle(USER_ID, new UpsertInvestmentSnapshotUseCase.Command(
                 month,
                 accountId,
                 new BigDecimal("20000.00"),

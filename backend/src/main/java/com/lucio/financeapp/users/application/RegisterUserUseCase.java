@@ -11,8 +11,6 @@ import com.lucio.financeapp.users.infrastructure.persistence.UserJpaRepository;
 @Component
 public class RegisterUserUseCase {
 
-    private static final String PASSWORD_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$";
-
     private final UserJpaRepository repo;
     private final PasswordEncoder passwordEncoder;
 
@@ -25,6 +23,7 @@ public class RegisterUserUseCase {
     public void handle(RegisterRequest request) {
 
         String username = Objects.requireNonNull(request.username(), "username is required").trim();
+        String email = Objects.requireNonNull(request.email(), "email is required").trim().toLowerCase();
         String password = Objects.requireNonNull(request.password(), "password is required");
         String baseCurrency = request.baseCurrency() == null ? "EUR" : request.baseCurrency();
 
@@ -32,17 +31,24 @@ public class RegisterUserUseCase {
             throw new IllegalArgumentException("username is required");
         }
 
-        if (!password.matches(PASSWORD_REGEX)) {
-            throw new IllegalArgumentException("password is too weak");
+        if (email.isBlank()) {
+            throw new IllegalArgumentException("email is required");
         }
+
+        PasswordPolicy.validateOrThrow(password);
 
         if (repo.findByUsername(username).isPresent()) {
             throw new IllegalArgumentException("Username already exists");
         }
 
+        if (repo.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
         User user = new User(
                 UUID.randomUUID(),
                 username,
+                email,
                 passwordEncoder.encode(password),
                 baseCurrency);
 

@@ -37,7 +37,7 @@ public class ComputeNetWorthTimelineUseCase {
         }
 
         public List<NetWorthMonthlyView> handle(UUID userId, int year) {
-                Currency currency = financeProperties.getBaseCurrency();
+                Currency currency = Currency.valueOf(financeProperties.getBaseCurrency());
                 List<AccountView> accounts = listAccounts.handle(userId).stream()
                                 .filter(a -> a.currency() == currency)
                                 .toList();

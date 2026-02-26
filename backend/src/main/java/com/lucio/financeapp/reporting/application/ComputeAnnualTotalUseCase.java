@@ -14,33 +14,34 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class ComputeAnnualTotalUseCase {
 
-    private final ComputeAnnualTimelineUseCase timelineUseCase;
+        private final ComputeAnnualTimelineUseCase timelineUseCase;
 
-    public ComputeAnnualTotalUseCase(ComputeAnnualTimelineUseCase timelineUseCase) {
-        this.timelineUseCase = timelineUseCase;
-    }
+        public ComputeAnnualTotalUseCase(ComputeAnnualTimelineUseCase timelineUseCase) {
+                this.timelineUseCase = timelineUseCase;
+        }
 
         public AnnualTotalView handle(UUID userId, int year) {
                 List<MonthlySummaryView> timeline = timelineUseCase.handle(userId, year);
 
-        BigDecimal totalIncome = timeline.stream()
-                .map(MonthlySummaryView::totalIncome)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalIncome = timeline.stream()
+                                .map(MonthlySummaryView::totalIncome)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalExpense = timeline.stream()
-                .map(MonthlySummaryView::totalExpense)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal totalExpense = timeline.stream()
+                                .map(MonthlySummaryView::totalExpense)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal annualResult = totalIncome.subtract(totalExpense);
+                BigDecimal annualResult = totalIncome.subtract(totalExpense);
 
-        int monthsWithData = (int) timeline.stream()
-                .filter(m -> m.totalIncome().signum() != 0 || m.totalExpense().signum() != 0)
-                .count();
+                int monthsWithData = (int) timeline.stream()
+                                .filter(m -> m.totalIncome().signum() != 0 || m.totalExpense().signum() != 0)
+                                .count();
 
-        BigDecimal avgMonthlySavings = monthsWithData == 0
-                ? BigDecimal.ZERO
-                : annualResult.divide(BigDecimal.valueOf(monthsWithData), 2, RoundingMode.HALF_UP);
+                BigDecimal avgMonthlySavings = monthsWithData == 0
+                                ? BigDecimal.ZERO
+                                : annualResult.divide(BigDecimal.valueOf(monthsWithData), 2, RoundingMode.HALF_UP);
 
-        return new AnnualTotalView(year, totalIncome, totalExpense, annualResult, monthsWithData, avgMonthlySavings);
-    }
+                return new AnnualTotalView(year, totalIncome, totalExpense, annualResult, monthsWithData,
+                                avgMonthlySavings);
+        }
 }

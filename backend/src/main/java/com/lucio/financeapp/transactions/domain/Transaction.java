@@ -75,7 +75,6 @@ public class Transaction {
         this.kind = kind;
         this.transferId = transferId;
         this.createdAt = Instant.now();
-    
 
     }
 

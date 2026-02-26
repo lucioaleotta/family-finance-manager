@@ -19,74 +19,80 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest(properties = {
-        "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.flyway.enabled=false"
+                "spring.jpa.hibernate.ddl-auto=create-drop",
+                "spring.flyway.enabled=false"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.AUTO_CONFIGURED)
 class JpaTransactionRepositoryTest {
 
-    @Autowired
-    private TestEntityManager entityManager;
+        private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000f200");
 
-    @Autowired
-    private SpringDataTransactionRepository repository;
+        @Autowired
+        private TestEntityManager entityManager;
 
-    @Test
-    void findByMonthOrdersByDateDesc() {
-        UUID accountId = UUID.randomUUID();
-        YearMonth month = YearMonth.of(2024, 5);
+        @Autowired
+        private SpringDataTransactionRepository repository;
 
-        Transaction first = transaction(accountId, LocalDate.of(2024, 5, 3));
-        Transaction second = transaction(accountId, LocalDate.of(2024, 5, 20));
-        Transaction third = transaction(accountId, LocalDate.of(2024, 5, 1));
+        @Test
+        void findByMonthOrdersByDateDesc() {
+                UUID accountId = UUID.randomUUID();
+                YearMonth month = YearMonth.of(2024, 5);
 
-        entityManager.persist(first);
-        entityManager.persist(second);
-        entityManager.persist(third);
-        entityManager.flush();
+                Transaction first = transaction(accountId, LocalDate.of(2024, 5, 3));
+                Transaction second = transaction(accountId, LocalDate.of(2024, 5, 20));
+                Transaction third = transaction(accountId, LocalDate.of(2024, 5, 1));
 
-        List<Transaction> result = repository.findByDateBetweenOrderByDateDesc(
-                month.atDay(1),
-                month.atEndOfMonth());
+                entityManager.persist(first);
+                entityManager.persist(second);
+                entityManager.persist(third);
+                entityManager.flush();
 
-        assertThat(result)
-                .extracting(Transaction::getDate)
-                .containsExactly(
-                        LocalDate.of(2024, 5, 20),
-                        LocalDate.of(2024, 5, 3),
-                        LocalDate.of(2024, 5, 1));
-    }
+                List<Transaction> result = repository.findByUserIdAndDateBetweenOrderByDateDesc(
+                                USER_ID,
+                                month.atDay(1),
+                                month.atEndOfMonth());
 
-    @Test
-    void findByAccountUpToOrdersByDateDesc() {
-        UUID accountId = UUID.randomUUID();
-        UUID otherAccountId = UUID.randomUUID();
+                assertThat(result)
+                                .extracting(Transaction::getDate)
+                                .containsExactly(
+                                                LocalDate.of(2024, 5, 20),
+                                                LocalDate.of(2024, 5, 3),
+                                                LocalDate.of(2024, 5, 1));
+        }
 
-        entityManager.persist(transaction(accountId, LocalDate.of(2024, 6, 2)));
-        entityManager.persist(transaction(accountId, LocalDate.of(2024, 6, 10)));
-        entityManager.persist(transaction(otherAccountId, LocalDate.of(2024, 6, 15)));
-        entityManager.persist(transaction(accountId, LocalDate.of(2024, 5, 30)));
-        entityManager.flush();
+        @Test
+        void findByAccountUpToOrdersByDateDesc() {
+                UUID accountId = UUID.randomUUID();
+                UUID otherAccountId = UUID.randomUUID();
 
-        List<Transaction> result = repository.findByAccountIdAndDateLessThanEqualOrderByDateDescCreatedAtDesc(
-                accountId,
-                LocalDate.of(2024, 6, 10));
+                entityManager.persist(transaction(accountId, LocalDate.of(2024, 6, 2)));
+                entityManager.persist(transaction(accountId, LocalDate.of(2024, 6, 10)));
+                entityManager.persist(transaction(otherAccountId, LocalDate.of(2024, 6, 15)));
+                entityManager.persist(transaction(accountId, LocalDate.of(2024, 5, 30)));
+                entityManager.flush();
 
-        assertThat(result)
-                .extracting(Transaction::getDate)
-                .containsExactly(
-                        LocalDate.of(2024, 6, 10),
-                        LocalDate.of(2024, 6, 2),
-                        LocalDate.of(2024, 5, 30));
-    }
+                List<Transaction> result = repository
+                                .findByUserIdAndAccountIdAndDateLessThanEqualOrderByDateDescCreatedAtDesc(
+                                                USER_ID,
+                                                accountId,
+                                                LocalDate.of(2024, 6, 10));
 
-    private Transaction transaction(UUID accountId, LocalDate date) {
-        return Transaction.standard(
-                accountId,
-                Money.of(BigDecimal.valueOf(10), Currency.EUR),
-                date,
-                TransactionType.EXPENSE,
-                "food",
-                "test");
-    }
+                assertThat(result)
+                                .extracting(Transaction::getDate)
+                                .containsExactly(
+                                                LocalDate.of(2024, 6, 10),
+                                                LocalDate.of(2024, 6, 2),
+                                                LocalDate.of(2024, 5, 30));
+        }
+
+        private Transaction transaction(UUID accountId, LocalDate date) {
+                return Transaction.standard(
+                                USER_ID,
+                                accountId,
+                                Money.of(BigDecimal.valueOf(10), Currency.EUR),
+                                date,
+                                TransactionType.EXPENSE,
+                                "food",
+                                "test");
+        }
 }
