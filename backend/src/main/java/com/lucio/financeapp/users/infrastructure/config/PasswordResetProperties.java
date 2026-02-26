@@ -1,15 +1,27 @@
 package com.lucio.financeapp.users.infrastructure.config;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
 
 @Component
+@Validated
 @ConfigurationProperties(prefix = "security.password-reset")
 public class PasswordResetProperties {
 
-    private long tokenMinutes = 30;
-    private String resetUrl = "http://localhost:3000/reset-password";
-    private String fromEmail = "no-reply@family-finance.local";
+    @Min(1)
+    private long tokenMinutes;
+
+    @NotBlank
+    private String resetUrl;
+
+    @NotBlank
+    @Email
+    private String fromEmail;
 
     public long getTokenMinutes() {
         return tokenMinutes;

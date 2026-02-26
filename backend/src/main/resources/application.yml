@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    default: dev
   datasource:
     url: jdbc:postgresql://localhost:5432/finance
     username: finance
@@ -16,14 +18,5 @@ spring:
     baseline-on-migrate: true
 finance:
   base-currency: EUR
-security:
-  jwt:
-    issuer: financeapp
-    secret: CHANGE_ME_DEV_SECRET_32_CHARS_MIN_12345
-    access-token-minutes: 60
-  password-reset:
-    token-minutes: 30
-    reset-url: http://localhost:3000/reset-password
-    from-email: no-reply@family-finance.local
 server:
   port: 8080
