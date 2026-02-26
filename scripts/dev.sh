@@ -27,6 +27,17 @@ log_warn() {
     echo -e "${YELLOW}[WARN]${NC} $1"
 }
 
+docker_compose() {
+    if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+        docker compose "$@"
+    elif command -v docker-compose >/dev/null 2>&1; then
+        docker-compose "$@"
+    else
+        log_error "Docker Compose non trovato. Installa Docker Desktop o docker-compose."
+        return 127
+    fi
+}
+
 # Funzione per mostrare l'help
 show_help() {
     cat << EOF
@@ -71,7 +82,7 @@ EOF
 start_database() {
     log_info "Starting database..."
     cd "$DOCKER_DIR"
-    docker-compose -f postgres.yml up -d
+    docker_compose -f postgres.yml up -d
     sleep 3
     log_info "Database started ✓"
 }
@@ -79,7 +90,7 @@ start_database() {
 stop_database() {
     log_info "Stopping database..."
     cd "$DOCKER_DIR"
-    docker-compose -f postgres.yml down
+    docker_compose -f postgres.yml down
     log_info "Database stopped ✓"
 }
 
@@ -91,7 +102,7 @@ restart_database() {
 
 db_logs() {
     cd "$DOCKER_DIR"
-    docker-compose -f postgres.yml logs -f
+    docker_compose -f postgres.yml logs -f
 }
 
 # Backend functions
@@ -182,7 +193,7 @@ show_status() {
     
     # Database
     cd "$DOCKER_DIR"
-    if docker-compose -f postgres.yml ps 2>/dev/null | grep -q "Up"; then
+    if docker_compose -f postgres.yml ps 2>/dev/null | grep -q "Up"; then
         echo -e "Database:  ${GREEN}✓ Running${NC}"
     else
         echo -e "Database:  ${RED}✗ Stopped${NC}"

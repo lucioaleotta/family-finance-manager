@@ -11,20 +11,49 @@ APP_LOG="$LOG_DIR/backend.log"
 
 mkdir -p "$RUN_DIR" "$LOG_DIR"
 
+docker_compose() {
+  if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    docker compose "$@"
+  elif command -v docker-compose >/dev/null 2>&1; then
+    docker-compose "$@"
+  else
+    echo "Docker Compose non trovato. Installa Docker Desktop o docker-compose." >&2
+    return 127
+  fi
+}
+
 is_app_running() {
-  if [[ -f "$PID_FILE" ]]; then
-    local pid
-    pid="$(cat "$PID_FILE")"
-    if kill -0 "$pid" 2>/dev/null; then
-      return 0
-    fi
+  if get_app_pid >/dev/null 2>&1; then
+    return 0
   fi
   return 1
 }
 
+get_app_pid() {
+  if [[ -f "$PID_FILE" ]]; then
+    local pid
+    pid="$(cat "$PID_FILE")"
+    if kill -0 "$pid" 2>/dev/null; then
+      echo "$pid"
+      return 0
+    fi
+  fi
+
+  local detected_pid
+  detected_pid="$(pgrep -f "spring-boot:run" | head -n 1 || true)"
+  if [[ -n "$detected_pid" ]]; then
+    echo "$detected_pid"
+    return 0
+  fi
+
+  return 1
+}
+
 app_up() {
-  if is_app_running; then
-    echo "Spring Boot già avviato (PID $(cat "$PID_FILE"))."
+  local running_pid
+  if running_pid="$(get_app_pid)"; then
+    echo "$running_pid" > "$PID_FILE"
+    echo "Spring Boot già avviato (PID $running_pid)."
     return
   fi
 
@@ -38,13 +67,12 @@ app_up() {
 }
 
 app_down() {
-  if ! [[ -f "$PID_FILE" ]]; then
-    echo "Nessun PID file trovato per Spring Boot."
+  local pid
+  if ! pid="$(get_app_pid)"; then
+    echo "Nessun processo Spring Boot trovato."
+    rm -f "$PID_FILE"
     return
   fi
-
-  local pid
-  pid="$(cat "$PID_FILE")"
 
   if kill -0 "$pid" 2>/dev/null; then
     echo "Stop Spring Boot (PID $pid)..."
@@ -64,29 +92,33 @@ app_down() {
 
 db_up() {
   echo "Avvio PostgreSQL Docker..."
-  docker compose -f "$COMPOSE_FILE" up -d
+  docker_compose -f "$COMPOSE_FILE" up -d
 }
 
 db_down() {
   echo "Stop PostgreSQL Docker..."
-  docker compose -f "$COMPOSE_FILE" down
+  docker_compose -f "$COMPOSE_FILE" down
 }
 
 show_status() {
   echo "=== Spring Boot ==="
-  if is_app_running; then
-    echo "RUNNING (PID $(cat "$PID_FILE"))"
+  local running_pid
+  if running_pid="$(get_app_pid)"; then
+    echo "$running_pid" > "$PID_FILE"
+    echo "RUNNING (PID $running_pid)"
   else
     echo "STOPPED"
   fi
 
   echo
   echo "=== Porta 8080 ==="
-  lsof -nP -iTCP:8080 -sTCP:LISTEN || true
+  if ! lsof -nP -iTCP:8080 -sTCP:LISTEN 2>/dev/null; then
+    echo "Nessun processo in ascolto su 8080"
+  fi
 
   echo
   echo "=== Docker PostgreSQL ==="
-  docker compose -f "$COMPOSE_FILE" ps
+  docker_compose -f "$COMPOSE_FILE" ps
 }
 
 show_logs() {
@@ -99,7 +131,7 @@ show_logs() {
       tail -f "$APP_LOG"
       ;;
     db|postgres)
-      docker compose -f "$COMPOSE_FILE" logs -f postgres
+      docker_compose -f "$COMPOSE_FILE" logs -f postgres
       ;;
     all)
       echo "Usa due terminali:"

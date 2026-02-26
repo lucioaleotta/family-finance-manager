@@ -25,7 +25,7 @@ More details in `docs/architecture.md`.
 - Java 21+
 - Maven 3.8+
 - Node.js 18+ & npm
-- Docker & Docker Compose
+- Docker (Compose v2 `docker compose`; supporto anche a `docker-compose` v1)
 
 ### Development Script
 
