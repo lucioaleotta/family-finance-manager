@@ -189,6 +189,12 @@ export default function InvestmentsPage() {
                     <CardTitle>Snapshot mensile per conto</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {selectedAccount ? (
+                        <p className="text-sm text-slate-500">
+                            Stai aggiornando gli snapshot di <strong>{selectedAccount.name}</strong> ({selectedAccount.currency}).
+                        </p>
+                    ) : null}
+
                     <div className="flex flex-wrap items-center gap-4">
                         <MonthPicker value={month} onChange={setMonth} />
 
@@ -266,12 +272,6 @@ export default function InvestmentsPage() {
                     )}
                 </CardContent>
             </Card>
-
-            {selectedAccount ? (
-                <p className="text-sm text-slate-500">
-                    Stai aggiornando gli snapshot di <strong>{selectedAccount.name}</strong> ({selectedAccount.currency}).
-                </p>
-            ) : null}
         </div>
     )
 }
