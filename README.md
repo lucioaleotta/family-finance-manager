@@ -82,6 +82,16 @@ The project includes a development script (`scripts/dev.sh`) to manage all servi
 - Git branching convention: [backend/docs/git-branching-convention.md](backend/docs/git-branching-convention.md)
 - Frontend development script: [frontend/scripts/dev.sh](frontend/scripts/dev.sh)
 
+## Deploy su Google Cloud
+
+- Guida passo-passo: [docs/deploy/google-cloud-step-by-step.md](docs/deploy/google-cloud-step-by-step.md)
+- Report attività deploy setup: [docs/deploy/deployment-report-2026-02-26.md](docs/deploy/deployment-report-2026-02-26.md)
+- Template secrets: [docs/deploy/secrets-template.env](docs/deploy/secrets-template.env)
+
+### CI/CD Workflows
+- Backend Cloud Run: [.github/workflows/deploy-backend-cloud-run.yml](.github/workflows/deploy-backend-cloud-run.yml)
+- Frontend Cloud Run: [.github/workflows/deploy-frontend-cloud-run.yml](.github/workflows/deploy-frontend-cloud-run.yml)
+
 ## Password Reset (Forgot Password)
 
 La funzionalità di reset password è implementata end-to-end (frontend + backend + DB).
@@ -124,8 +134,8 @@ Esempio avvio backend con profilo prod:
 ```bash
 cd backend
 SPRING_PROFILES_ACTIVE=prod \
-JWT_ISSUER=financeapp \
-JWT_SECRET=change_me_with_strong_secret \
+JWT_ISSUER=<JWT_ISSUER> \
+JWT_SECRET=<JWT_SECRET_FROM_SECRET_MANAGER> \
 JWT_ACCESS_TOKEN_MINUTES=60 \
 PASSWORD_RESET_TOKEN_MINUTES=30 \
 PASSWORD_RESET_URL=https://app.example.com/reset-password \
