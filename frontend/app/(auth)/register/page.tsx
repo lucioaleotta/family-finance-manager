@@ -8,12 +8,24 @@ export default function RegisterPage() {
     const router = useRouter()
 
     const [username, setUsername] = useState("")
+    const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [currency, setCurrency] = useState("EUR")
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState("")
 
     const trimmedUsername = username.trim()
+    const trimmedEmail = email.trim()
+
+    function emailValidationMessage(value: string) {
+        if (!value) {
+            return "Email obbligatoria"
+        }
+        if (!/^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$/.test(value)) {
+            return "Inserisci un'email valida"
+        }
+        return ""
+    }
 
     function passwordValidationMessage(value: string) {
         if (!value) {
@@ -29,8 +41,9 @@ export default function RegisterPage() {
     }
 
     const usernameError = trimmedUsername ? "" : "Username obbligatorio"
+    const emailError = emailValidationMessage(trimmedEmail)
     const passwordError = passwordValidationMessage(password)
-    const isFormValid = !usernameError && !passwordError
+    const isFormValid = !usernameError && !emailError && !passwordError
 
     async function register() {
 
@@ -39,7 +52,7 @@ export default function RegisterPage() {
         }
 
         if (!isFormValid) {
-            setSubmitError("Compila correttamente username e password")
+            setSubmitError("Compila correttamente username, email e password")
             return
         }
 
@@ -52,6 +65,7 @@ export default function RegisterPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     username: trimmedUsername,
+                    email: trimmedEmail,
                     password,
                     baseCurrency: currency
                 })
@@ -99,6 +113,14 @@ export default function RegisterPage() {
                     onChange={e => setUsername(e.target.value)}
                 />
                 {usernameError && <p className="text-sm text-red-600">{usernameError}</p>}
+
+                <input
+                    className="w-full border p-2"
+                    placeholder="Email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                />
+                {emailError && <p className="text-sm text-red-600">{emailError}</p>}
 
                 <input
                     type="password"

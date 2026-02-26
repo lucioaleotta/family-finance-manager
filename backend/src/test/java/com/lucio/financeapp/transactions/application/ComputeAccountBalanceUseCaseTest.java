@@ -26,6 +26,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ComputeAccountBalanceUseCaseTest {
 
+    private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000b100");
+
     @Mock
     private AccountRepository accountRepository;
 
@@ -40,17 +42,19 @@ class ComputeAccountBalanceUseCaseTest {
         UUID accountId = UUID.randomUUID();
         LocalDate asOf = LocalDate.of(2026, 2, 28);
 
-        Account account = Account.of("Fineco", AccountType.CHECKING, Currency.EUR);
-        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        Account account = Account.of(USER_ID, "Fineco", AccountType.CHECKING, Currency.EUR);
+        when(accountRepository.findByIdAndUserId(accountId, USER_ID)).thenReturn(Optional.of(account));
 
-        Transaction income = Transaction.standard(accountId, Money.of(new BigDecimal("1200.00"), Currency.EUR), asOf,
+        Transaction income = Transaction.standard(USER_ID, accountId, Money.of(new BigDecimal("1200.00"), Currency.EUR),
+                asOf,
                 TransactionType.INCOME, "SALARY", "Salary");
-        Transaction expense = Transaction.standard(accountId, Money.of(new BigDecimal("250.00"), Currency.EUR), asOf,
+        Transaction expense = Transaction.standard(USER_ID, accountId, Money.of(new BigDecimal("250.00"), Currency.EUR),
+                asOf,
                 TransactionType.EXPENSE, "GROCERIES", "Food");
 
-        when(transactionRepository.findByAccountUpTo(accountId, asOf)).thenReturn(List.of(income, expense));
+        when(transactionRepository.findByAccountUpTo(accountId, USER_ID, asOf)).thenReturn(List.of(income, expense));
 
-        var result = useCase.handle(accountId, asOf);
+        var result = useCase.handle(USER_ID, accountId, asOf);
 
         assertEquals(accountId, result.accountId());
         assertEquals(asOf, result.asOf());
@@ -61,10 +65,10 @@ class ComputeAccountBalanceUseCaseTest {
     @Test
     void shouldThrowWhenAccountDoesNotExist() {
         UUID accountId = UUID.randomUUID();
-        when(accountRepository.findById(accountId)).thenReturn(Optional.empty());
+        when(accountRepository.findByIdAndUserId(accountId, USER_ID)).thenReturn(Optional.empty());
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> useCase.handle(accountId, LocalDate.of(2026, 2, 28)));
+                () -> useCase.handle(USER_ID, accountId, LocalDate.of(2026, 2, 28)));
 
         assertTrue(exception.getMessage().contains("Account not found"));
     }

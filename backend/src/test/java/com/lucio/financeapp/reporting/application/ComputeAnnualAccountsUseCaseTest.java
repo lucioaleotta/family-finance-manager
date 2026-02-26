@@ -25,6 +25,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ComputeAnnualAccountsUseCaseTest {
 
+    private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000d400");
+
     @Mock
     private TransactionFacade transactionFacade;
 
@@ -36,15 +38,16 @@ class ComputeAnnualAccountsUseCaseTest {
         UUID accountA = UUID.fromString("00000000-0000-0000-0000-000000000001");
         UUID accountB = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
-        when(transactionFacade.findByMonth(any(YearMonth.class))).thenReturn(List.of());
-        when(transactionFacade.findByMonth(YearMonth.of(2026, 1))).thenReturn(List.of(
+        when(transactionFacade.findByMonth(org.mockito.ArgumentMatchers.eq(USER_ID), any(YearMonth.class)))
+                .thenReturn(List.of());
+        when(transactionFacade.findByMonth(USER_ID, YearMonth.of(2026, 1))).thenReturn(List.of(
                 tx(accountA, "100.00", TransactionType.INCOME),
                 tx(accountB, "25.00", TransactionType.EXPENSE)));
-        when(transactionFacade.findByMonth(YearMonth.of(2026, 2))).thenReturn(List.of(
+        when(transactionFacade.findByMonth(USER_ID, YearMonth.of(2026, 2))).thenReturn(List.of(
                 tx(accountA, "40.00", TransactionType.EXPENSE),
                 tx(accountA, "10.00", TransactionType.INCOME)));
 
-        var result = useCase.handle(2026);
+        var result = useCase.handle(USER_ID, 2026);
 
         assertEquals(2, result.size());
 

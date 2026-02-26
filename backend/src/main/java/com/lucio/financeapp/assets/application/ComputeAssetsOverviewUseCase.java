@@ -53,7 +53,7 @@ public class ComputeAssetsOverviewUseCase {
     }
 
     public AssetsOverviewView handle(UUID userId, int year) {
-        Currency baseCurrency = financeProperties.getBaseCurrency();
+        Currency baseCurrency = Currency.valueOf(financeProperties.getBaseCurrency());
         YearMonth start = YearMonth.of(year, 1);
         YearMonth end = YearMonth.of(year, 12);
 

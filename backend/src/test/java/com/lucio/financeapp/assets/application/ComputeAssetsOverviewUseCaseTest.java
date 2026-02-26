@@ -30,6 +30,8 @@ import com.lucio.financeapp.transactions.domain.AccountType;
 @ExtendWith(MockitoExtension.class)
 class ComputeAssetsOverviewUseCaseTest {
 
+        private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000a100");
+
         @Mock
         private ListAccountsUseCase listAccounts;
 
@@ -58,8 +60,8 @@ class ComputeAssetsOverviewUseCaseTest {
                 UUID eurInvestmentAccount = UUID.fromString("00000000-0000-0000-0000-000000000030");
                 UUID chfInvestmentAccount = UUID.fromString("00000000-0000-0000-0000-000000000040");
 
-                when(financeProperties.getBaseCurrency()).thenReturn(Currency.EUR);
-                when(listAccounts.handle()).thenReturn(List.of(
+                when(financeProperties.getBaseCurrency()).thenReturn("EUR");
+                when(listAccounts.handle(USER_ID)).thenReturn(List.of(
                                 new AccountView(eurLiquidityAccount, "Fineco", AccountType.LIQUIDITY, Currency.EUR),
                                 new AccountView(chfLiquidityAccount, "CHF Liquidity", AccountType.LIQUIDITY,
                                                 Currency.CHF),
@@ -93,7 +95,7 @@ class ComputeAssetsOverviewUseCaseTest {
                 when(liquiditySnapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
                                 .thenReturn(List.of(eurLiquiditySnapshot, chfLiquiditySnapshot));
 
-                var result = useCase.handle(2026);
+                var result = useCase.handle(USER_ID, 2026);
 
                 var january = result.monthly().get(0);
                 assertEquals(new BigDecimal("320.00"), january.liquidity());
@@ -114,8 +116,8 @@ class ComputeAssetsOverviewUseCaseTest {
         void shouldCarryForwardLatestInvestmentSnapshotAcrossFollowingMonths() {
                 UUID eurInvestmentAccount = UUID.fromString("00000000-0000-0000-0000-000000000010");
 
-                when(financeProperties.getBaseCurrency()).thenReturn(Currency.EUR);
-                when(listAccounts.handle()).thenReturn(List.of(
+                when(financeProperties.getBaseCurrency()).thenReturn("EUR");
+                when(listAccounts.handle(USER_ID)).thenReturn(List.of(
                                 new AccountView(eurInvestmentAccount, "Fineco", AccountType.INVESTMENT,
                                                 Currency.EUR)));
 
@@ -136,7 +138,7 @@ class ComputeAssetsOverviewUseCaseTest {
                 when(liquiditySnapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
                                 .thenReturn(List.of());
 
-                var result = useCase.handle(2026);
+                var result = useCase.handle(USER_ID, 2026);
 
                 assertEquals(new BigDecimal("2000.00"), result.monthly().get(0).investments());
                 assertEquals(new BigDecimal("5000.00"), result.monthly().get(1).investments());

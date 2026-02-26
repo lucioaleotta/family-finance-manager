@@ -97,6 +97,14 @@ export default function LoginPage() {
                     Register
                 </button>
 
+                <button
+                    className="w-full p-2 text-sm text-slate-600 underline"
+                    disabled={isSubmitting}
+                    onClick={() => router.push("/forgot-password")}
+                >
+                    Forgot password?
+                </button>
+
                 {isSubmitting && (
                     <p className="text-sm text-slate-600 text-center">Caricamento in corso...</p>
                 )}

@@ -17,6 +17,9 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @Column(nullable = false, unique = true)
+    private String email;
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -27,8 +30,13 @@ public class User {
     }
 
     public User(UUID id, String username, String passwordHash, String baseCurrency) {
+        this(id, username, username, passwordHash, baseCurrency);
+    }
+
+    public User(UUID id, String username, String email, String passwordHash, String baseCurrency) {
         this.id = id;
         this.username = username;
+        this.email = email;
         this.passwordHash = passwordHash;
         this.baseCurrency = baseCurrency;
     }
@@ -41,11 +49,19 @@ public class User {
         return username;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
     public String getPasswordHash() {
         return passwordHash;
     }
 
     public String getBaseCurrency() {
         return baseCurrency;
+    }
+
+    public void updatePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 }

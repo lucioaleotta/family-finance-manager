@@ -21,5 +21,9 @@ security:
     issuer: financeapp
     secret: CHANGE_ME_DEV_SECRET_32_CHARS_MIN_12345
     access-token-minutes: 60
+  password-reset:
+    token-minutes: 30
+    reset-url: http://localhost:3000/reset-password
+    from-email: no-reply@family-finance.local
 server:
   port: 8080

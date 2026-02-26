@@ -51,7 +51,7 @@ public class ComputeNetWorthReconciliationUseCase {
         }
 
         public List<NetWorthReconciliationView> handle(UUID userId, int year) {
-                Currency currency = financeProperties.getBaseCurrency();
+                Currency currency = Currency.valueOf(financeProperties.getBaseCurrency());
                 List<NetWorthMonthlyView> timeline = netWorthTimeline.handle(userId, year);
 
                 // Net worth del mese precedente (Dec dell'anno prima) per avere delta anche a
@@ -73,8 +73,9 @@ public class ComputeNetWorthReconciliationUseCase {
                                 .map(current -> {
                                         YearMonth month = current.month();
 
-                                        BigDecimal cashflow = computeCashflow(userId, month); // STANDARD only, same currency
-                                                                                      // assumed
+                                        BigDecimal cashflow = computeCashflow(userId, month); // STANDARD only, same
+                                                                                              // currency
+                                        // assumed
                                         BigDecimal netWorth = current.netWorth();
                                         BigDecimal netWorthDelta = netWorth.subtract(holder.value);
                                         BigDecimal unexplained = netWorthDelta.subtract(cashflow);

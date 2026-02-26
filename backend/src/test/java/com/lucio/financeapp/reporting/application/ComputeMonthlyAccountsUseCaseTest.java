@@ -24,6 +24,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ComputeMonthlyAccountsUseCaseTest {
 
+    private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000d200");
+
     @Mock
     private TransactionFacade transactionFacade;
 
@@ -36,13 +38,13 @@ class ComputeMonthlyAccountsUseCaseTest {
         UUID accountA = UUID.fromString("00000000-0000-0000-0000-000000000001");
         UUID accountB = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
-        when(transactionFacade.findByMonth(month)).thenReturn(List.of(
+        when(transactionFacade.findByMonth(USER_ID, month)).thenReturn(List.of(
                 tx(accountB, "20.00", TransactionType.EXPENSE),
                 tx(accountA, "100.00", TransactionType.INCOME),
                 tx(accountA, "40.00", TransactionType.EXPENSE),
                 tx(null, "999.00", TransactionType.INCOME)));
 
-        var result = useCase.handle(month);
+        var result = useCase.handle(USER_ID, month);
 
         assertEquals(2, result.size());
 

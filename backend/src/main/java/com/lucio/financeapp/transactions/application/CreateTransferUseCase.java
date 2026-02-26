@@ -39,7 +39,7 @@ public class CreateTransferUseCase {
 
         // Expense on source account
         Transaction out = Transaction.transfer(
-            userId,
+                userId,
                 command.fromAccountId(),
                 money,
                 command.date(),
@@ -50,7 +50,7 @@ public class CreateTransferUseCase {
 
         // Income on destination account
         Transaction in = Transaction.transfer(
-            userId,
+                userId,
                 command.toAccountId(),
                 money,
                 command.date(),

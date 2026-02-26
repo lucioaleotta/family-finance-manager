@@ -33,6 +33,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ComputeNetWorthReconciliationUseCaseTest {
 
+        private static final UUID USER_ID = UUID.fromString("00000000-0000-0000-0000-00000000e400");
+
         @Mock
         private ComputeNetWorthTimelineUseCase netWorthTimeline;
 
@@ -59,9 +61,9 @@ class ComputeNetWorthReconciliationUseCaseTest {
                 YearMonth jan = YearMonth.of(2026, 1);
                 YearMonth feb = YearMonth.of(2026, 2);
 
-                when(financeProperties.getBaseCurrency()).thenReturn(Currency.EUR);
+                when(financeProperties.getBaseCurrency()).thenReturn("EUR");
 
-                when(netWorthTimeline.handle(2026)).thenReturn(List.of(
+                when(netWorthTimeline.handle(USER_ID, 2026)).thenReturn(List.of(
                                 new NetWorthMonthlyView(jan, Currency.EUR, new BigDecimal("1100.00"),
                                                 new BigDecimal("100.00"),
                                                 new BigDecimal("1200.00")),
@@ -71,7 +73,7 @@ class ComputeNetWorthReconciliationUseCaseTest {
 
                 UUID liquidityAccountId = UUID.randomUUID();
                 UUID investmentAccountId = UUID.randomUUID();
-                when(listAccounts.handle()).thenReturn(List.of(
+                when(listAccounts.handle(USER_ID)).thenReturn(List.of(
                                 new AccountView(liquidityAccountId, "Liquidita", AccountType.LIQUIDITY, Currency.EUR),
                                 new AccountView(investmentAccountId, "Investimenti", AccountType.INVESTMENT,
                                                 Currency.EUR)));
@@ -86,16 +88,16 @@ class ComputeNetWorthReconciliationUseCaseTest {
                                                 Money.of(new BigDecimal("100.00"), Currency.EUR),
                                                 "baseline")));
 
-                when(transactionFacade.findByMonth(jan)).thenReturn(List.of(
+                when(transactionFacade.findByMonth(USER_ID, jan)).thenReturn(List.of(
                                 tx(new BigDecimal("300.00"), TransactionType.INCOME, TransactionKind.STANDARD),
                                 tx(new BigDecimal("50.00"), TransactionType.EXPENSE, TransactionKind.STANDARD),
                                 tx(new BigDecimal("999.00"), TransactionType.INCOME, TransactionKind.TRANSFER)));
 
-                when(transactionFacade.findByMonth(feb)).thenReturn(List.of(
+                when(transactionFacade.findByMonth(USER_ID, feb)).thenReturn(List.of(
                                 tx(new BigDecimal("100.00"), TransactionType.INCOME, TransactionKind.STANDARD),
                                 tx(new BigDecimal("50.00"), TransactionType.EXPENSE, TransactionKind.STANDARD)));
 
-                var result = useCase.handle(2026);
+                var result = useCase.handle(USER_ID, 2026);
 
                 assertEquals(2, result.size());
 
