@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 function passwordValidationMessage(value: string) {
@@ -16,7 +16,7 @@ function passwordValidationMessage(value: string) {
     return ""
 }
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageContent() {
 
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -173,5 +173,19 @@ export default function ResetPasswordPage() {
                 </button>
             </div>
         </div>
+    )
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex h-screen items-center justify-center">
+                    <p className="text-sm text-slate-600">Caricamento...</p>
+                </div>
+            }
+        >
+            <ResetPasswordPageContent />
+        </Suspense>
     )
 }
