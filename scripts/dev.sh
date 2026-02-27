@@ -7,6 +7,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BACKEND_DIR="$PROJECT_ROOT/backend"
 FRONTEND_DIR="$PROJECT_ROOT/frontend"
 DOCKER_DIR="$PROJECT_ROOT/backend/docker"
+LOCAL_DOCKER_COMPOSE_FILE="$PROJECT_ROOT/docker-compose.local.yml"
 
 # Colori per output
 RED='\033[0;31m'
@@ -69,6 +70,12 @@ Commands:
   frontend-stop     Stop frontend only
   frontend-restart  Restart frontend only
   frontend-logs     Show frontend logs
+
+    docker-local-up      Start full local Docker stack (db, backend, frontend)
+    docker-local-up-fast Start local Docker stack without rebuild
+    docker-local-down    Stop full local Docker stack
+    docker-local-logs    Show logs from local Docker stack
+    docker-local-status  Show status of local Docker stack
   
   help              Show this help message
 
@@ -78,6 +85,8 @@ Examples:
   ./dev.sh db-restart            # Restart only database
   ./dev.sh backend-build         # Build backend
   ./dev.sh frontend-logs         # Show frontend logs
+    ./dev.sh docker-local-up       # Start full Docker local stack
+    ./dev.sh docker-local-up-fast  # Start Docker local stack without rebuild
 EOF
 }
 
@@ -265,6 +274,65 @@ show_all_logs() {
     echo "  ./dev.sh frontend-logs"
 }
 
+# Local Docker full-stack functions
+start_local_docker_stack() {
+    if [[ ! -f "$LOCAL_DOCKER_COMPOSE_FILE" ]]; then
+        log_error "File non trovato: $LOCAL_DOCKER_COMPOSE_FILE"
+        return 1
+    fi
+
+    log_info "Starting local Docker stack..."
+    cd "$PROJECT_ROOT"
+    docker_compose -f "$LOCAL_DOCKER_COMPOSE_FILE" up -d --build
+    log_info "Local Docker stack started ✓"
+    log_info "Frontend: http://localhost:3000 | Backend: http://localhost:8080 | PostgreSQL: localhost:5432"
+}
+
+start_local_docker_stack_fast() {
+    if [[ ! -f "$LOCAL_DOCKER_COMPOSE_FILE" ]]; then
+        log_error "File non trovato: $LOCAL_DOCKER_COMPOSE_FILE"
+        return 1
+    fi
+
+    log_info "Starting local Docker stack (fast, no rebuild)..."
+    cd "$PROJECT_ROOT"
+    docker_compose -f "$LOCAL_DOCKER_COMPOSE_FILE" up -d
+    log_info "Local Docker stack started ✓"
+    log_info "Frontend: http://localhost:3000 | Backend: http://localhost:8080 | PostgreSQL: localhost:5432"
+}
+
+stop_local_docker_stack() {
+    if [[ ! -f "$LOCAL_DOCKER_COMPOSE_FILE" ]]; then
+        log_error "File non trovato: $LOCAL_DOCKER_COMPOSE_FILE"
+        return 1
+    fi
+
+    log_info "Stopping local Docker stack..."
+    cd "$PROJECT_ROOT"
+    docker_compose -f "$LOCAL_DOCKER_COMPOSE_FILE" down
+    log_info "Local Docker stack stopped ✓"
+}
+
+local_docker_stack_logs() {
+    if [[ ! -f "$LOCAL_DOCKER_COMPOSE_FILE" ]]; then
+        log_error "File non trovato: $LOCAL_DOCKER_COMPOSE_FILE"
+        return 1
+    fi
+
+    cd "$PROJECT_ROOT"
+    docker_compose -f "$LOCAL_DOCKER_COMPOSE_FILE" logs -f
+}
+
+local_docker_stack_status() {
+    if [[ ! -f "$LOCAL_DOCKER_COMPOSE_FILE" ]]; then
+        log_error "File non trovato: $LOCAL_DOCKER_COMPOSE_FILE"
+        return 1
+    fi
+
+    cd "$PROJECT_ROOT"
+    docker_compose -f "$LOCAL_DOCKER_COMPOSE_FILE" ps
+}
+
 # Main logic
 COMMAND="${1:-help}"
 
@@ -328,6 +396,21 @@ case "$COMMAND" in
         ;;
     frontend-logs)
         frontend_logs
+        ;;
+    docker-local-up)
+        start_local_docker_stack
+        ;;
+    docker-local-up-fast)
+        start_local_docker_stack_fast
+        ;;
+    docker-local-down)
+        stop_local_docker_stack
+        ;;
+    docker-local-logs)
+        local_docker_stack_logs
+        ;;
+    docker-local-status)
+        local_docker_stack_status
         ;;
     help|--help|-h)
         show_help
