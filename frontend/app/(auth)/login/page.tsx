@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { PiggyBank } from "lucide-react"
 
 export default function LoginPage() {
 
@@ -51,6 +52,11 @@ export default function LoginPage() {
     return (
         <div className="flex h-screen items-center justify-center">
             <div className="w-[320px] space-y-4">
+
+                <div className="mb-2 flex items-center justify-center gap-2">
+                    <PiggyBank className="h-6 w-6 text-slate-800" />
+                    <span className="text-lg font-semibold text-slate-900">Family Finance Manager</span>
+                </div>
 
                 <h1 className="text-2xl font-semibold">Login</h1>
 
