@@ -37,6 +37,14 @@ type FormValues = z.infer<typeof schema>
 
 
 export default function NewTransactionPage() {
+    return (
+        <React.Suspense fallback={<div className="p-6 text-sm text-slate-600">Caricamento...</div>}>
+            <NewTransactionPageContent />
+        </React.Suspense>
+    )
+}
+
+function NewTransactionPageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
 
