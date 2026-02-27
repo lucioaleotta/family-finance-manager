@@ -13,3 +13,4 @@ services:
 
 volumes:
   finance_pgdata:
+    name: family-finance-pgdata
