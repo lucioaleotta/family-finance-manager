@@ -82,11 +82,42 @@ The project includes a development script (`scripts/dev.sh`) to manage all servi
 - Git branching convention: [backend/docs/git-branching-convention.md](backend/docs/git-branching-convention.md)
 - Frontend development script: [frontend/scripts/dev.sh](frontend/scripts/dev.sh)
 
+## Avvio completo in Docker (locale)
+
+Se vuoi eseguire tutto in container (PostgreSQL + Backend + Frontend):
+
+```bash
+docker compose -f docker-compose.local.yml up --build
+```
+
+Servizi esposti:
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8080
+- PostgreSQL: localhost:5432
+
+Nota persistenza DB:
+- I compose locali usano un volume condiviso con nome fisso `family-finance-pgdata`.
+- `down` non cancella i dati.
+- `down -v` rimuove il volume e quindi i dati persistiti.
+
+Stop stack:
+
+```bash
+docker compose -f docker-compose.local.yml down
+```
+
+Stop + rimozione volume DB:
+
+```bash
+docker compose -f docker-compose.local.yml down -v
+```
+
 ## Deploy su Google Cloud
 
 - Guida passo-passo: [docs/deploy/google-cloud-step-by-step.md](docs/deploy/google-cloud-step-by-step.md)
 - Report attività deploy setup: [docs/deploy/deployment-report-2026-02-26.md](docs/deploy/deployment-report-2026-02-26.md)
 - Template secrets: [docs/deploy/secrets-template.env](docs/deploy/secrets-template.env)
+- Checklist pre-demo clienti: [docs/deploy/pre-demo-checklist.md](docs/deploy/pre-demo-checklist.md)
 
 ### CI/CD Workflows
 - Backend Cloud Run: [.github/workflows/deploy-backend-cloud-run.yml](.github/workflows/deploy-backend-cloud-run.yml)
