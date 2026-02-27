@@ -1,0 +1,10 @@
+.git
+.gitignore
+target
+logs
+.run
+.DS_Store
+~
+Dockerfile
+README.md
+scripts
