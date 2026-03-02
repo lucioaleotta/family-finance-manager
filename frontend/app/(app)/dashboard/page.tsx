@@ -44,6 +44,19 @@ function currentYM() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
+function previousYM(ym: string) {
+    const [yearPart, monthPart] = ym.split("-")
+    const year = Number(yearPart)
+    const month = Number(monthPart)
+
+    if (month <= 1) return `${year - 1}-12`
+    return `${year}-${String(month - 1).padStart(2, "0")}`
+}
+
+function ym(year: number, month: number) {
+    return `${year}-${String(month).padStart(2, "0")}`
+}
+
 function buildDelta(currentValue: number, previousValue: number | null) {
     if (previousValue === null) {
         return {
@@ -106,19 +119,18 @@ export default function DashboardPage() {
     const previousYearMonthly = previousYearOverview?.monthly ?? []
     const annual = overview?.annual
     const currency = overview?.currency ?? "EUR"
-    const currentMonthSnapshot = monthly.find((entry) => entry.month === currentYM())
     const sortedMonthly = [...monthly].sort((a, b) => a.month.localeCompare(b.month))
     const sortedAllMonthly = [...previousYearMonthly, ...monthly].sort((a, b) => a.month.localeCompare(b.month))
     const latestMonthSnapshotInYear = sortedMonthly.length > 0 ? sortedMonthly[sortedMonthly.length - 1] : null
-    const referenceSnapshot = currentMonthSnapshot ?? latestMonthSnapshotInYear
 
-    let previousSnapshot: AssetsMonthlyView | null = null
-    if (referenceSnapshot) {
-        const referenceIndex = sortedAllMonthly.findIndex((entry) => entry.month === referenceSnapshot.month)
-        if (referenceIndex > 0) {
-            previousSnapshot = sortedAllMonthly[referenceIndex - 1]
-        }
-    }
+    const t1Month = year === currentYear() ? previousYM(currentYM()) : ym(year, 12)
+    const t2Month = previousYM(t1Month)
+
+    const t1Snapshot = sortedAllMonthly.find((entry) => entry.month === t1Month) ?? null
+    const t2Snapshot = sortedAllMonthly.find((entry) => entry.month === t2Month) ?? null
+
+    const referenceSnapshot = t1Snapshot ?? latestMonthSnapshotInYear
+    const previousSnapshot = t1Snapshot ? t2Snapshot : null
 
     const annualLiquidity = referenceSnapshot?.liquidity ?? annual?.liquidity ?? 0
     const annualInvestments = referenceSnapshot?.investments ?? annual?.investments ?? 0
@@ -168,10 +180,10 @@ export default function DashboardPage() {
                         </p>
                         <div
                             className={`mt-1 flex items-center gap-1 text-xs ${netWorthDelta.amount > 0
-                                    ? "text-emerald-600"
-                                    : netWorthDelta.amount < 0
-                                        ? "text-red-600"
-                                        : "text-muted-foreground"
+                                ? "text-emerald-600"
+                                : netWorthDelta.amount < 0
+                                    ? "text-red-600"
+                                    : "text-muted-foreground"
                                 }`}
                         >
                             {netWorthDelta.amount > 0 ? (
@@ -198,10 +210,10 @@ export default function DashboardPage() {
                         </p>
                         <div
                             className={`mt-1 flex items-center gap-1 text-xs ${liquidityDelta.amount > 0
-                                    ? "text-emerald-600"
-                                    : liquidityDelta.amount < 0
-                                        ? "text-red-600"
-                                        : "text-muted-foreground"
+                                ? "text-emerald-600"
+                                : liquidityDelta.amount < 0
+                                    ? "text-red-600"
+                                    : "text-muted-foreground"
                                 }`}
                         >
                             {liquidityDelta.amount > 0 ? (
@@ -228,10 +240,10 @@ export default function DashboardPage() {
                         </p>
                         <div
                             className={`mt-1 flex items-center gap-1 text-xs ${investmentsDelta.amount > 0
-                                    ? "text-emerald-600"
-                                    : investmentsDelta.amount < 0
-                                        ? "text-red-600"
-                                        : "text-muted-foreground"
+                                ? "text-emerald-600"
+                                : investmentsDelta.amount < 0
+                                    ? "text-red-600"
+                                    : "text-muted-foreground"
                                 }`}
                         >
                             {investmentsDelta.amount > 0 ? (
