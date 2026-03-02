@@ -5,7 +5,7 @@ import { apiGet } from "@/lib/api"
 import { formatAmount } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AssetsAnnualChart } from "@/components/assets-annual-chart"
-import { Wallet, Droplets, TrendingUp } from "lucide-react"
+import { ArrowDownRight, ArrowUpRight, Droplets, Minus, TrendingUp, Wallet } from "lucide-react"
 
 type AssetsMonthlyView = {
     month: string
@@ -44,10 +44,35 @@ function currentYM() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
+function buildDelta(currentValue: number, previousValue: number | null) {
+    if (previousValue === null) {
+        return {
+            amount: 0,
+            percent: 0,
+        }
+    }
+
+    const amount = currentValue - previousValue
+    const percent = previousValue !== 0 ? (amount / previousValue) * 100 : 0
+
+    return { amount, percent }
+}
+
+function formatDeltaPercent(value: number) {
+    const sign = value > 0 ? "+" : ""
+    return `${sign}${value.toFixed(2).replace(".", ",")}%`
+}
+
+function formatDeltaAmount(value: number) {
+    const sign = value > 0 ? "+" : value < 0 ? "-" : ""
+    return `${sign}${formatAmount(Math.abs(value))}`
+}
+
 
 
 export default function DashboardPage() {
     const [overview, setOverview] = React.useState<AssetsOverviewView | null>(null)
+    const [previousYearOverview, setPreviousYearOverview] = React.useState<AssetsOverviewView | null>(null)
     const [loading, setLoading] = React.useState(true)
     const [year, setYear] = React.useState(currentYear())
 
@@ -58,13 +83,15 @@ export default function DashboardPage() {
                 try {
                     setLoading(true)
 
-                    const overviewResponse = await apiGet<AssetsOverviewView>(
-                        `/api/assets/overview?year=${year}`
-                    )
+                    const [overviewResponse, previousYearResponse] = await Promise.all([
+                        apiGet<AssetsOverviewView>(`/api/assets/overview?year=${year}`),
+                        apiGet<AssetsOverviewView>(`/api/assets/overview?year=${year - 1}`),
+                    ])
 
                     if (cancelled) return
 
                     setOverview(overviewResponse)
+                    setPreviousYearOverview(previousYearResponse)
                 } finally {
                     if (!cancelled) setLoading(false)
                 }
@@ -76,14 +103,38 @@ export default function DashboardPage() {
     }, [year])
 
     const monthly = overview?.monthly ?? []
+    const previousYearMonthly = previousYearOverview?.monthly ?? []
     const annual = overview?.annual
     const currency = overview?.currency ?? "EUR"
-    const latestMonth = monthly.length > 0 ? monthly[monthly.length - 1] : null
     const currentMonthSnapshot = monthly.find((entry) => entry.month === currentYM())
+    const sortedMonthly = [...monthly].sort((a, b) => a.month.localeCompare(b.month))
+    const sortedAllMonthly = [...previousYearMonthly, ...monthly].sort((a, b) => a.month.localeCompare(b.month))
+    const latestMonthSnapshotInYear = sortedMonthly.length > 0 ? sortedMonthly[sortedMonthly.length - 1] : null
+    const referenceSnapshot = currentMonthSnapshot ?? latestMonthSnapshotInYear
 
-    const annualLiquidity = currentMonthSnapshot?.liquidity ?? annual?.liquidity ?? 0
-    const annualInvestments = currentMonthSnapshot?.investments ?? annual?.investments ?? 0
-    const annualNetWorth = annualLiquidity + annualInvestments
+    let previousSnapshot: AssetsMonthlyView | null = null
+    if (referenceSnapshot) {
+        const referenceIndex = sortedAllMonthly.findIndex((entry) => entry.month === referenceSnapshot.month)
+        if (referenceIndex > 0) {
+            previousSnapshot = sortedAllMonthly[referenceIndex - 1]
+        }
+    }
+
+    const annualLiquidity = referenceSnapshot?.liquidity ?? annual?.liquidity ?? 0
+    const annualInvestments = referenceSnapshot?.investments ?? annual?.investments ?? 0
+    const annualNetWorth = referenceSnapshot?.netWorth ?? annual?.netWorth ?? (annualLiquidity + annualInvestments)
+    const netWorthDelta = buildDelta(
+        referenceSnapshot?.netWorth ?? 0,
+        previousSnapshot?.netWorth ?? null
+    )
+    const liquidityDelta = buildDelta(
+        referenceSnapshot?.liquidity ?? 0,
+        previousSnapshot?.liquidity ?? null
+    )
+    const investmentsDelta = buildDelta(
+        referenceSnapshot?.investments ?? 0,
+        previousSnapshot?.investments ?? null
+    )
 
     return (
         <div className="w-full max-w-none space-y-6">
@@ -115,6 +166,24 @@ export default function DashboardPage() {
                         <p className="text-2xl font-bold">
                             {currency} {formatAmount(annualNetWorth)}
                         </p>
+                        <div
+                            className={`mt-1 flex items-center gap-1 text-xs ${netWorthDelta.amount > 0
+                                    ? "text-emerald-600"
+                                    : netWorthDelta.amount < 0
+                                        ? "text-red-600"
+                                        : "text-muted-foreground"
+                                }`}
+                        >
+                            {netWorthDelta.amount > 0 ? (
+                                <ArrowUpRight className="h-3.5 w-3.5" />
+                            ) : netWorthDelta.amount < 0 ? (
+                                <ArrowDownRight className="h-3.5 w-3.5" />
+                            ) : (
+                                <Minus className="h-3.5 w-3.5" />
+                            )}
+                            <span>{formatDeltaAmount(netWorthDelta.amount)}</span>
+                            <span>({formatDeltaPercent(netWorthDelta.percent)})</span>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -127,6 +196,24 @@ export default function DashboardPage() {
                         <p className="text-2xl font-bold">
                             {currency} {formatAmount(annualLiquidity)}
                         </p>
+                        <div
+                            className={`mt-1 flex items-center gap-1 text-xs ${liquidityDelta.amount > 0
+                                    ? "text-emerald-600"
+                                    : liquidityDelta.amount < 0
+                                        ? "text-red-600"
+                                        : "text-muted-foreground"
+                                }`}
+                        >
+                            {liquidityDelta.amount > 0 ? (
+                                <ArrowUpRight className="h-3.5 w-3.5" />
+                            ) : liquidityDelta.amount < 0 ? (
+                                <ArrowDownRight className="h-3.5 w-3.5" />
+                            ) : (
+                                <Minus className="h-3.5 w-3.5" />
+                            )}
+                            <span>{formatDeltaAmount(liquidityDelta.amount)}</span>
+                            <span>({formatDeltaPercent(liquidityDelta.percent)})</span>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -139,6 +226,24 @@ export default function DashboardPage() {
                         <p className="text-2xl font-bold">
                             {currency} {formatAmount(annualInvestments)}
                         </p>
+                        <div
+                            className={`mt-1 flex items-center gap-1 text-xs ${investmentsDelta.amount > 0
+                                    ? "text-emerald-600"
+                                    : investmentsDelta.amount < 0
+                                        ? "text-red-600"
+                                        : "text-muted-foreground"
+                                }`}
+                        >
+                            {investmentsDelta.amount > 0 ? (
+                                <ArrowUpRight className="h-3.5 w-3.5" />
+                            ) : investmentsDelta.amount < 0 ? (
+                                <ArrowDownRight className="h-3.5 w-3.5" />
+                            ) : (
+                                <Minus className="h-3.5 w-3.5" />
+                            )}
+                            <span>{formatDeltaAmount(investmentsDelta.amount)}</span>
+                            <span>({formatDeltaPercent(investmentsDelta.percent)})</span>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

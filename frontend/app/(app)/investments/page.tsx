@@ -8,6 +8,7 @@ import { formatAmount } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react"
 
 type AccountView = {
     id: string
@@ -38,10 +39,41 @@ function fmtInputAmount(value: number) {
     return value.toFixed(2)
 }
 
+function previousYM(ym: string) {
+    const [yearStr, monthStr] = ym.split("-")
+    const year = Number(yearStr)
+    const month = Number(monthStr)
+
+    if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+        return ym
+    }
+
+    if (month === 1) {
+        return `${year - 1}-12`
+    }
+
+    return `${year}-${String(month - 1).padStart(2, "0")}`
+}
+
+function formatDeltaPercent(value: number | null) {
+    if (value === null || !Number.isFinite(value)) {
+        return "n/d"
+    }
+
+    const sign = value > 0 ? "+" : ""
+    return `${sign}${value.toFixed(2).replace(".", ",")}%`
+}
+
+function formatDeltaAmount(value: number) {
+    const sign = value > 0 ? "+" : value < 0 ? "-" : ""
+    return `${sign}${formatAmount(Math.abs(value))}`
+}
+
 export default function InvestmentsPage() {
     const [month, setMonth] = React.useState(currentYM())
     const [accounts, setAccounts] = React.useState<AccountView[]>([])
     const [totals, setTotals] = React.useState<CategoryMonthlyTotalView[]>([])
+    const [previousTotals, setPreviousTotals] = React.useState<CategoryMonthlyTotalView[]>([])
     const [accountId, setAccountId] = React.useState("")
     const [amount, setAmount] = React.useState("")
     const [note, setNote] = React.useState("")
@@ -81,8 +113,14 @@ export default function InvestmentsPage() {
     }, [])
 
     const loadTotals = React.useCallback(async () => {
-        const data = await apiGet<CategoryMonthlyTotalView[]>(`/api/assets/investments/totals?month=${month}`)
-        setTotals(data)
+        const previousMonth = previousYM(month)
+        const [currentData, previousData] = await Promise.all([
+            apiGet<CategoryMonthlyTotalView[]>(`/api/assets/investments/totals?month=${month}`),
+            apiGet<CategoryMonthlyTotalView[]>(`/api/assets/investments/totals?month=${previousMonth}`),
+        ])
+
+        setTotals(currentData)
+        setPreviousTotals(previousData)
     }, [month])
 
     const loadSnapshots = React.useCallback(async () => {
@@ -129,6 +167,9 @@ export default function InvestmentsPage() {
 
     const parsedAmount = Number(amount.replace(",", "."))
     const isAmountValid = Number.isFinite(parsedAmount) && parsedAmount >= 0
+    const previousTotalsByCurrency = React.useMemo(() => {
+        return new Map(previousTotals.map((total) => [total.currency, total.total]))
+    }, [previousTotals])
 
     async function saveSnapshot() {
         if (!accountId) {
@@ -172,13 +213,48 @@ export default function InvestmentsPage() {
                     {totals.length === 0 ? (
                         <p className="text-sm text-slate-600">Nessuno snapshot INVESTMENT presente per {month}.</p>
                     ) : (
-                        <div className="flex flex-wrap gap-3">
-                            {totals.map((total) => (
-                                <div key={total.currency} className="rounded-xl border bg-white px-4 py-2 text-sm">
-                                    <span className="text-slate-500">{total.currency}: </span>
-                                    <span className="font-semibold">{formatAmount(total.total)}</span>
-                                </div>
-                            ))}
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            {totals.map((total) => {
+                                const previousValue = previousTotalsByCurrency.get(total.currency)
+                                const hasDelta = typeof previousValue === "number"
+                                const deltaAmount = hasDelta ? total.total - previousValue : 0
+                                const deltaPercent =
+                                    hasDelta && previousValue !== 0
+                                        ? (deltaAmount / previousValue) * 100
+                                        : hasDelta
+                                            ? 0
+                                            : null
+                                const isPositive = deltaAmount > 0
+                                const isNegative = deltaAmount < 0
+
+                                return (
+                                    <div key={total.currency} className="rounded-xl border bg-white px-6 py-5">
+                                        <p className="text-base text-slate-500">{total.currency}</p>
+                                        <p className="mt-1 text-3xl font-semibold leading-none">{formatAmount(total.total)}</p>
+
+                                        {hasDelta ? (
+                                            <div
+                                                className={`mt-3 flex items-center gap-1 text-sm ${isPositive
+                                                        ? "text-emerald-600"
+                                                        : isNegative
+                                                            ? "text-red-600"
+                                                            : "text-muted-foreground"
+                                                    }`}
+                                            >
+                                                {isPositive ? (
+                                                    <ArrowUpRight className="h-3.5 w-3.5" />
+                                                ) : isNegative ? (
+                                                    <ArrowDownRight className="h-3.5 w-3.5" />
+                                                ) : (
+                                                    <Minus className="h-3.5 w-3.5" />
+                                                )}
+                                                <span>{formatDeltaAmount(deltaAmount)}</span>
+                                                <span>({formatDeltaPercent(deltaPercent)})</span>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                )
+                            })}
                         </div>
                     )}
                 </CardContent>
