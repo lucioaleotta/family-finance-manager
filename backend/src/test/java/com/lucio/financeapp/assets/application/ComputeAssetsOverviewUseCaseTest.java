@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Year;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
@@ -55,6 +56,8 @@ class ComputeAssetsOverviewUseCaseTest {
 
         @Test
         void shouldConvertCurrenciesAndAggregateAnnualAndMonthly() {
+                int testedYear = Year.now().getValue();
+
                 UUID eurLiquidityAccount = UUID.fromString("00000000-0000-0000-0000-000000000010");
                 UUID chfLiquidityAccount = UUID.fromString("00000000-0000-0000-0000-000000000020");
                 UUID eurInvestmentAccount = UUID.fromString("00000000-0000-0000-0000-000000000030");
@@ -72,7 +75,7 @@ class ComputeAssetsOverviewUseCaseTest {
 
                 when(fxRateService.getRate(Currency.CHF, Currency.EUR)).thenReturn(new BigDecimal("1.10"));
 
-                YearMonth jan = YearMonth.of(2026, 1);
+                YearMonth jan = YearMonth.of(testedYear, 1);
                 InvestmentSnapshot eurSnapshot = InvestmentSnapshot.of(jan,
                                 eurInvestmentAccount,
                                 Money.of(new BigDecimal("1000.00"), Currency.EUR),
@@ -90,12 +93,12 @@ class ComputeAssetsOverviewUseCaseTest {
                                 Money.of(new BigDecimal("200.00"), Currency.CHF),
                                 "CHF liquidity");
 
-                when(snapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
+                when(snapshots.findByMonthBetween(YearMonth.of(testedYear, 1), YearMonth.of(testedYear, 12)))
                                 .thenReturn(List.of(eurSnapshot, chfSnapshot));
-                when(liquiditySnapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
+                when(liquiditySnapshots.findByMonthBetween(YearMonth.of(testedYear, 1), YearMonth.of(testedYear, 12)))
                                 .thenReturn(List.of(eurLiquiditySnapshot, chfLiquiditySnapshot));
 
-                var result = useCase.handle(USER_ID, 2026);
+                var result = useCase.handle(USER_ID, testedYear);
 
                 var january = result.monthly().get(0);
                 assertEquals(new BigDecimal("320.00"), january.liquidity());
@@ -114,6 +117,8 @@ class ComputeAssetsOverviewUseCaseTest {
 
         @Test
         void shouldCarryForwardLatestInvestmentSnapshotAcrossFollowingMonths() {
+                int testedYear = Year.now().getValue();
+
                 UUID eurInvestmentAccount = UUID.fromString("00000000-0000-0000-0000-000000000010");
 
                 when(financeProperties.getBaseCurrency()).thenReturn("EUR");
@@ -121,8 +126,8 @@ class ComputeAssetsOverviewUseCaseTest {
                                 new AccountView(eurInvestmentAccount, "Fineco", AccountType.INVESTMENT,
                                                 Currency.EUR)));
 
-                YearMonth jan = YearMonth.of(2026, 1);
-                YearMonth feb = YearMonth.of(2026, 2);
+                YearMonth jan = YearMonth.of(testedYear, 1);
+                YearMonth feb = YearMonth.of(testedYear, 2);
 
                 InvestmentSnapshot janSnapshot = InvestmentSnapshot.of(jan,
                                 eurInvestmentAccount,
@@ -133,12 +138,12 @@ class ComputeAssetsOverviewUseCaseTest {
                                 Money.of(new BigDecimal("5000.00"), Currency.EUR),
                                 "Feb snapshot");
 
-                when(snapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
+                when(snapshots.findByMonthBetween(YearMonth.of(testedYear, 1), YearMonth.of(testedYear, 12)))
                                 .thenReturn(List.of(janSnapshot, febSnapshot));
-                when(liquiditySnapshots.findByMonthBetween(YearMonth.of(2026, 1), YearMonth.of(2026, 12)))
+                when(liquiditySnapshots.findByMonthBetween(YearMonth.of(testedYear, 1), YearMonth.of(testedYear, 12)))
                                 .thenReturn(List.of());
 
-                var result = useCase.handle(USER_ID, 2026);
+                var result = useCase.handle(USER_ID, testedYear);
 
                 assertEquals(new BigDecimal("2000.00"), result.monthly().get(0).investments());
                 assertEquals(new BigDecimal("5000.00"), result.monthly().get(1).investments());
@@ -152,5 +157,36 @@ class ComputeAssetsOverviewUseCaseTest {
                 assertEquals(expectedAnnualLiquidity, result.annual().liquidity());
                 assertEquals(result.annual().liquidity().add(result.annual().investments()),
                                 result.annual().netWorth());
+        }
+
+        @Test
+        void shouldUseDecemberForAnnualWhenYearIsInThePast() {
+                int pastYear = Year.now().getValue() - 1;
+                UUID eurInvestmentAccount = UUID.fromString("00000000-0000-0000-0000-000000000099");
+
+                when(financeProperties.getBaseCurrency()).thenReturn("EUR");
+                when(listAccounts.handle(USER_ID)).thenReturn(List.of(
+                                new AccountView(eurInvestmentAccount, "ETF EUR", AccountType.INVESTMENT,
+                                                Currency.EUR)));
+
+                InvestmentSnapshot janSnapshot = InvestmentSnapshot.of(YearMonth.of(pastYear, 1),
+                                eurInvestmentAccount,
+                                Money.of(new BigDecimal("1000.00"), Currency.EUR),
+                                "Jan snapshot");
+                InvestmentSnapshot decSnapshot = InvestmentSnapshot.of(YearMonth.of(pastYear, 12),
+                                eurInvestmentAccount,
+                                Money.of(new BigDecimal("9000.00"), Currency.EUR),
+                                "Dec snapshot");
+
+                when(snapshots.findByMonthBetween(YearMonth.of(pastYear, 1), YearMonth.of(pastYear, 12)))
+                                .thenReturn(List.of(janSnapshot, decSnapshot));
+                when(liquiditySnapshots.findByMonthBetween(YearMonth.of(pastYear, 1), YearMonth.of(pastYear, 12)))
+                                .thenReturn(List.of());
+
+                var result = useCase.handle(USER_ID, pastYear);
+
+                assertEquals(new BigDecimal("9000.00"), result.annual().investments());
+                assertEquals(new BigDecimal("0"), result.annual().liquidity());
+                assertEquals(new BigDecimal("9000.00"), result.annual().netWorth());
         }
 }
