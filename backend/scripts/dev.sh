@@ -146,6 +146,34 @@ show_logs() {
   esac
 }
 
+db_export() {
+  local output_file="${1:-}"
+  if [[ -n "$output_file" ]]; then
+    "$SCRIPT_DIR/db-export.sh" "$output_file"
+  else
+    "$SCRIPT_DIR/db-export.sh"
+  fi
+}
+
+db_import() {
+  local backup_file="${1:-}"
+  if [[ -z "$backup_file" ]]; then
+    echo "Uso: ./scripts/dev.sh db-import <path-backup.dump>"
+    exit 1
+  fi
+
+  "$SCRIPT_DIR/db-import.sh" "$backup_file"
+}
+
+db_smoke_test() {
+  local output_file="${1:-}"
+  if [[ -n "$output_file" ]]; then
+    "$SCRIPT_DIR/db-smoke-test.sh" "$output_file"
+  else
+    "$SCRIPT_DIR/db-smoke-test.sh"
+  fi
+}
+
 usage() {
   cat <<EOF
 Uso: ./scripts/dev.sh <comando>
@@ -155,12 +183,18 @@ Comandi:
   down         Ferma Spring Boot + PostgreSQL
   status       Stato app, porta 8080 e container
   logs [target]  Log runtime (target: app | db | all)
+  db-export [file] Export dump database PostgreSQL
+  db-import <file> Import dump database PostgreSQL
+  db-smoke-test [file] Esegue smoke test backup/restore con cleanup automatico
 
 Esempi:
   ./scripts/dev.sh up
   ./scripts/dev.sh status
   ./scripts/dev.sh logs app
   ./scripts/dev.sh logs db
+  ./scripts/dev.sh db-export
+  ./scripts/dev.sh db-import ./backups/finance_YYYYmmdd_HHMMSS.dump
+  ./scripts/dev.sh db-smoke-test
   ./scripts/dev.sh down
 EOF
 }
@@ -181,6 +215,15 @@ case "$command" in
     ;;
   logs)
     show_logs "${2:-app}"
+    ;;
+  db-export)
+    db_export "${2:-}"
+    ;;
+  db-import)
+    db_import "${2:-}"
+    ;;
+  db-smoke-test)
+    db_smoke_test "${2:-}"
     ;;
   *)
     usage

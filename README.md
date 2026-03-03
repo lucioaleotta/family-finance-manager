@@ -19,6 +19,11 @@ This project follows a modular monolith approach using Spring Modulith and Domai
 
 More details in `docs/architecture.md`.
 
+Technical documentation:
+- `docs/technical-documentation.md`
+- `backend/docs/logging-standard.md`
+- `backend/docs/db-backup-restore.md`
+
 ## Getting Started
 
 ### Prerequisites
@@ -53,6 +58,9 @@ The project includes a development script (`scripts/dev.sh`) to manage all servi
 ./scripts/dev.sh db-stop       # Stop database
 ./scripts/dev.sh db-restart    # Restart database
 ./scripts/dev.sh db-logs       # Show database logs
+./scripts/dev.sh db-export     # Export database backup (.dump)
+./scripts/dev.sh db-import <file.dump> # Import database backup
+./scripts/dev.sh db-smoke-test # Smoke test backup/restore + cleanup automatico DB test
 
 # Backend (Spring Boot)
 ./scripts/dev.sh backend-start    # Start backend
@@ -76,6 +84,15 @@ The project includes a development script (`scripts/dev.sh`) to manage all servi
 ./scripts/dev.sh restart  # Restart all services
 ./scripts/dev.sh help     # Show help
 ```
+
+**Backup/Restore DB rapido (da root):**
+```bash
+./scripts/dev.sh db-export
+./scripts/dev.sh db-import ./backend/backups/<file>.dump
+./scripts/dev.sh db-smoke-test
+```
+
+Lo smoke test usa un database temporaneo (`finance_smoke`) e lo rimuove automaticamente al termine.
 
 ## Comandi utili
 - Backend cheat sheet: [backend/docs/commands-cheatsheet.md](backend/docs/commands-cheatsheet.md)

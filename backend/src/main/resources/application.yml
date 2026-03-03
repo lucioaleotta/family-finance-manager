@@ -20,3 +20,8 @@ finance:
   base-currency: EUR
 server:
   port: 8080
+logging:
+  level:
+    root: INFO
+    com.lucio.financeapp: INFO
+    org.springframework.security: WARN

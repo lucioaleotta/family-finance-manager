@@ -33,6 +33,9 @@ Thumbs.db
 # File JAR
 *.jar
 
+# Backup database locali
+backend/backups/*.dump
+
 # Cartella Maven locale
 **/.m2/
 

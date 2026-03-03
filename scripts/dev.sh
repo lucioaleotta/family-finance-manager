@@ -58,6 +58,9 @@ Commands:
   db-stop           Stop database only
   db-restart        Restart database only
   db-logs           Show database logs
+    db-export         Export database backup (.dump)
+    db-import         Import database backup (.dump)
+    db-smoke-test     Run backup/restore smoke test with automatic cleanup
   
   backend-start     Start backend only
     backend-start-prod Start backend only with profile prod
@@ -83,6 +86,9 @@ Examples:
   ./dev.sh up                    # Start all services
     ./dev.sh up-prod               # Start all services with backend prod profile
   ./dev.sh db-restart            # Restart only database
+    ./dev.sh db-export             # Export database backup
+    ./dev.sh db-import <file>      # Import database backup
+    ./dev.sh db-smoke-test         # Verify backup/restore and auto-cleanup test DB
   ./dev.sh backend-build         # Build backend
   ./dev.sh frontend-logs         # Show frontend logs
     ./dev.sh docker-local-up       # Start full Docker local stack
@@ -115,6 +121,37 @@ restart_database() {
 db_logs() {
     cd "$DOCKER_DIR"
     docker_compose -f postgres.yml logs -f
+}
+
+db_export() {
+    local output_file="${1:-}"
+    cd "$BACKEND_DIR"
+    if [[ -n "$output_file" ]]; then
+        ./scripts/db-export.sh "$output_file"
+    else
+        ./scripts/db-export.sh
+    fi
+}
+
+db_import() {
+    local backup_file="${1:-}"
+    if [[ -z "$backup_file" ]]; then
+        log_error "Usage: ./scripts/dev.sh db-import <path-backup.dump>"
+        return 1
+    fi
+
+    cd "$BACKEND_DIR"
+    ./scripts/db-import.sh "$backup_file"
+}
+
+db_smoke_test() {
+    local output_file="${1:-}"
+    cd "$BACKEND_DIR"
+    if [[ -n "$output_file" ]]; then
+        ./scripts/db-smoke-test.sh "$output_file"
+    else
+        ./scripts/db-smoke-test.sh
+    fi
 }
 
 # Backend functions
@@ -366,6 +403,15 @@ case "$COMMAND" in
         ;;
     db-logs)
         db_logs
+        ;;
+    db-export)
+        db_export "${2:-}"
+        ;;
+    db-import)
+        db_import "${2:-}"
+        ;;
+    db-smoke-test)
+        db_smoke_test "${2:-}"
         ;;
     backend-start)
         start_backend
