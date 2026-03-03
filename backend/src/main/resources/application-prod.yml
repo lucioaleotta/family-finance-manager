@@ -7,3 +7,6 @@ security:
     token-minutes: ${PASSWORD_RESET_TOKEN_MINUTES}
     reset-url: ${PASSWORD_RESET_URL}
     from-email: ${PASSWORD_RESET_FROM_EMAIL}
+logging:
+  level:
+    com.lucio.financeapp: INFO

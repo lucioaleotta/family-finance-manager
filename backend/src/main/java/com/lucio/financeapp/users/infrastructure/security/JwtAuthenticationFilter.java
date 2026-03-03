@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -24,6 +26,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtService jwtService;
     private final UserJpaRepository userRepository;
@@ -65,7 +69,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (JwtException ex) {
-            // Invalid token: leave context unauthenticated
+            LOGGER.debug("Invalid JWT token for request {} {}", request.getMethod(), request.getRequestURI());
         }
 
         filterChain.doFilter(request, response);

@@ -7,3 +7,6 @@ security:
     token-minutes: 30
     reset-url: http://localhost:3000/reset-password
     from-email: no-reply@family-finance.local
+logging:
+  level:
+    com.lucio.financeapp: DEBUG

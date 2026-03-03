@@ -185,6 +185,21 @@ Dalla cartella `backend`:
   ```bash
   ./scripts/dev.sh down
   ```
+- Export backup DB:
+  ```bash
+  ./scripts/dev.sh db-export
+  ```
+- Import backup DB:
+  ```bash
+  ./scripts/dev.sh db-import ./backups/finance_YYYYmmdd_HHMMSS.dump
+  ```
+- Smoke test backup/restore con cleanup automatico:
+  ```bash
+  ./scripts/dev.sh db-smoke-test
+  ```
+
+Runbook dettagliato backup/restore:
+- `backend/docs/db-backup-restore.md`
 
 Nota: i comandi Docker richiedono Docker Desktop/daemon attivo.
 
@@ -317,3 +332,11 @@ Env consigliate:
 ### Comportamento fallback
 Se `JavaMailSender` non è disponibile, il sistema **non fallisce**: logga il link di reset nei log backend.
 Utile in locale durante sviluppo/test.
+
+## Logging standard
+Documentazione standard logging applicativo:
+- `backend/docs/logging-standard.md`
+
+Pattern e correlazione request sono centralizzati in:
+- `backend/src/main/resources/logback-spring.xml`
+- `backend/src/main/java/com/lucio/financeapp/config/logging/RequestLoggingFilter.java`
