@@ -68,6 +68,7 @@ function NewTransactionPageContent() {
     const watchedAmount = form.watch("amount")
     const watchedCurrency = form.watch("currency")
     const watchedDate = form.watch("date")
+    const watchedType = form.watch("type")
 
     React.useEffect(() => {
         let cancelled = false
@@ -158,7 +159,7 @@ function NewTransactionPageContent() {
                             <div className="space-y-2">
                                 <Label>Account</Label>
                                 <Select
-                                    value={form.getValues("accountId") ?? ""}
+                                    value={watchedAccountId ?? ""}
                                     onValueChange={(v) => form.setValue("accountId", v || undefined)}
                                     disabled={loadingAccounts}
                                 >
@@ -181,7 +182,7 @@ function NewTransactionPageContent() {
                             <div className="space-y-2">
                                 <Label>Type</Label>
                                 <Select
-                                    value={form.getValues("type")}
+                                    value={watchedType}
                                     onValueChange={(v) => form.setValue("type", v as TransactionType)}
                                 >
                                     <SelectTrigger>
@@ -212,7 +213,7 @@ function NewTransactionPageContent() {
                             <div className="space-y-2">
                                 <Label>Currency</Label>
                                 <Select
-                                    value={form.getValues("currency")}
+                                    value={watchedCurrency}
                                     onValueChange={(v) => form.setValue("currency", v as Currency)}
                                     disabled={!!watchedAccountId} // se hai selezionato account, blocchiamo la valuta
                                 >
